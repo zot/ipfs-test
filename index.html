@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ipfs pubsub probe</title>
+<link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+
+<!-- CRC: ui-chat.md | R19 -->
+<!-- Both page states live here and are toggled by the hidden attribute; only
+     message rows are created at runtime, keeping the DOM as slim as the
+     content requires. -->
+
+<header>
+  <h1>ipfs pubsub probe</h1>
+  <p id="status"><b id="dot">&#9679;</b> <span id="status-text">checking IPFS Desktop&hellip;</span></p>
+  <p id="self" class="dim"></p>
+</header>
+
+<!-- CRC: ui-chat.md | R17, R52, R53 -->
+<!-- R52: the one-time fix leads as a single drag-and-click; the full ordered
+     step list and the by-hand config both wait behind a disclosure, surfacing
+     only when the quick path doesn't. The bookmarklet narrates the remaining
+     steps itself as the player reaches them. -->
+<section id="fail" hidden>
+  <p id="fail-msg"></p>
+
+  <!-- SPIKE-SCRATCH: drag-to-install bookmarklet fast path (not anchored). -->
+  <p><b>One-time fix</b> &mdash; drag this to your bookmarks bar, then click the bookmark.</p>
+  <p><a id="bm-link" href="javascript:void 0" draggable="true" class="bookmarklet">&#8600; Fix IPFS CORS</a></p>
+  <p class="dim">It opens your IPFS settings and walks you through the rest &mdash; about a minute.</p>
+
+  <details id="fail-help">
+    <summary>Not working? Show every step, or configure it by hand</summary>
+
+    <!-- R52, R53: the full ordered checklist, one action per step, honest count. -->
+    <ol id="fail-steps">
+      <li id="step-1"><b>Drag</b> the &ldquo;Fix IPFS CORS&rdquo; link above onto your bookmarks bar &mdash; don't click it in place.</li>
+      <li id="step-2">Open the daemon's own page in a new tab.
+        <p><button id="go-daemon">open IPFS Desktop &rarr;</button></p>
+      </li>
+      <li id="step-3">On <b>that</b> tab, click the &ldquo;Fix IPFS CORS&rdquo; bookmark you just dragged.
+        <span class="dim">It must be that tab &mdash; the bookmark will tell you if you're in the wrong place.</span>
+      </li>
+      <li id="step-4">Restart IPFS Desktop &mdash; tray icon &rarr; Restart.</li>
+      <li id="step-5">Come back to this tab.
+        <span class="dim">Or just wait &mdash; this page keeps checking by itself and carries on the
+          moment IPFS answers.</span>
+        <p><button id="retry">try again</button></p>
+      </li>
+    </ol>
+
+    <details id="fail-fix">
+      <summary>or configure it by hand instead</summary>
+      <p>In <b>IPFS Desktop &rarr; Settings</b> (or the WebUI Settings tab), which has a JSON config editor:</p>
+      <ol>
+        <li>Copy this page's origin:
+          <div class="snip"><pre id="fail-origin"></pre><button id="copy-origin">copy</button></div>
+        </li>
+        <li>Put both of these inside <code>API.HTTPHeaders</code>:
+          <pre id="fail-acao"></pre>
+        </li>
+        <li>Make sure pubsub is on:
+          <pre id="fail-pubsub"></pre>
+        </li>
+        <li>Save, restart IPFS Desktop, then click <b>try again</b> above.</li>
+      </ol>
+    </details>
+  </details>
+</section>
+
+<!-- CRC: ui-chat.md | R1 -->
+<section id="join" hidden>
+  <label>nickname <input id="nick" maxlength="32" autocomplete="off"></label>
+  <label>room <input id="room" autocomplete="off"></label>
+  <label>heartbeat
+    <select id="beat">
+      <option value="0">off</option>
+      <option value="2000">every 2s</option>
+      <option value="5000" selected>every 5s</option>
+      <option value="15000">every 15s</option>
+    </select>
+  </label>
+  <button id="join-btn">join room</button>
+  <p class="note">
+    Messages are public to everyone subscribed to the room. Nothing is stored &mdash;
+    a refresh loses the conversation. The heartbeat publishes a numbered ping so a
+    loss rate can be measured without anyone typing.
+  </p>
+</section>
+
+<!-- CRC: ui-chat.md | R14, R15 -->
+<section id="chat" hidden>
+  <div id="bar">
+    <b id="room-name"></b>
+    <span id="presence" class="dim"></span>
+    <button id="leave">leave</button>
+  </div>
+
+  <ol id="transcript"></ol>
+
+  <form id="composer">
+    <input id="text" autocomplete="off" placeholder="type a message">
+    <button>send</button>
+  </form>
+
+  <!-- CRC: ui-chat.md | R46 -->
+  <details id="stats-box" open>
+    <summary>measurements</summary>
+    <dl id="stats"></dl>
+    <label class="dim"><input type="checkbox" id="show-beats"> show heartbeats in transcript</label>
+    <button id="copy">copy report</button>
+  </details>
+</section>
+
+<script type="module" src="./src/app.js"></script>
+</body>
+</html>

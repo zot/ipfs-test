@@ -1,0 +1,94 @@
+/* CRC: ui-chat.md | R9, R10, R19 */
+/* An instrument, not a chat product: monospace, dense, everything legible at
+   a glance because two people will be reading numbers off it side by side. */
+
+:root {
+  --bg: #14161a; --fg: #d7dce2; --dim: #79828e; --line: #262b33;
+  --mine: #1d2a24; --theirs: #1b2030; --warn: #e0a44a; --bad: #e0625a; --ok: #63c08a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto; padding: 1rem; max-width: 60rem;
+  background: var(--bg); color: var(--fg);
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+h1 { font-size: 1rem; margin: 0; letter-spacing: .04em; }
+header { border-bottom: 1px solid var(--line); padding-bottom: .6rem; margin-bottom: .8rem; }
+header p { margin: .25rem 0 0; }
+.dim { color: var(--dim); }
+.note { color: var(--dim); max-width: 46rem; }
+
+#dot { color: var(--dim); }
+#dot.on { color: var(--ok); }
+#dot.off { color: var(--bad); }
+
+label { display: block; margin: .5rem 0; }
+input, select, button {
+  font: inherit; background: #1c2027; color: var(--fg);
+  border: 1px solid var(--line); border-radius: 3px; padding: .35rem .5rem;
+}
+input:focus, select:focus { outline: 1px solid #4a5568; }
+button { cursor: pointer; }
+button:hover { background: #262c35; }
+
+#bar { display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: .5rem; }
+#bar #presence { flex: 1; }
+
+#transcript { list-style: none; margin: .5rem 0; padding: 0; height: 24rem; overflow-y: auto; }
+#transcript li { padding: .3rem .5rem; margin: .25rem 0; border-radius: 3px; background: var(--theirs); }
+#transcript li.mine { background: var(--mine); margin-left: 20%; }
+#transcript li.beat { background: none; padding: .1rem .5rem; color: var(--dim); font-size: .85em; }
+#transcript li .meta { color: var(--dim); font-size: .85em; display: flex; gap: .6rem; }
+#transcript li .meta .pid { font-size: .95em; }
+#transcript li .body { white-space: pre-wrap; word-break: break-word; }
+
+/* R45: a lost message is the finding this whole page exists to surface, so it
+   is rendered as loudly as a real message rather than hidden in a counter. */
+#transcript li.gap { background: none; color: var(--warn); border-top: 1px dashed var(--warn); border-radius: 0; }
+
+#composer { display: flex; gap: .5rem; }
+#composer input { flex: 1; }
+
+#stats-box { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .5rem; }
+#stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .1rem .8rem; margin: .5rem 0; }
+#stats div { display: flex; justify-content: space-between; border-bottom: 1px dotted var(--line); }
+#stats dt { color: var(--dim); }
+#stats dd { margin: 0; }
+#stats dd.warn { color: var(--warn); }
+#stats dd.bad { color: var(--bad); }
+
+#fail-msg { color: var(--bad); max-width: 46rem; white-space: pre-wrap; }
+
+/* R52: one action per step, spaced so the eye lands on the actions instead of
+   swimming through a paragraph looking for them. */
+#fail-steps { max-width: 46rem; margin: .5rem 0 1.2rem; padding-left: 1.4rem; }
+#fail-steps > li { margin: .7rem 0; padding: .25rem .5rem; border-left: 2px solid transparent; }
+#fail-steps > li > p { margin: .4rem 0 0; }
+#fail-steps .dim { display: block; font-size: .9em; }
+
+/* R53: the step the player left the page to carry out stays marked, so
+   returning to this tab answers "where was I" without re-reading anything. */
+#fail-steps > li.current { border-left-color: var(--warn); background: #1f1b14; }
+#fail-steps > li.current::after {
+  content: "you are here"; display: block; margin-top: .3rem;
+  color: var(--warn); font-size: .85em; letter-spacing: .06em;
+}
+
+#fail-fix { max-width: 46rem; border-top: 1px solid var(--line); padding-top: .6rem; }
+#fail-fix summary { cursor: pointer; color: var(--dim); }
+#fail-fix summary:hover { color: var(--fg); }
+#fail-fix p { margin: .5rem 0; }
+#fail-fix li { margin: .6rem 0; }
+#fail-fix pre { background: #0f1216; border: 1px solid var(--line); border-radius: 3px; padding: .5rem .7rem; margin: .25rem 0; overflow-x: auto; white-space: pre; color: var(--fg); }
+#fail-fix code { background: #0f1216; padding: 0 .25rem; border-radius: 2px; }
+.snip { display: flex; gap: .5rem; align-items: flex-start; }
+.snip pre { flex: 1; margin: 0; }
+.snip button { flex: none; }
+
+/* SPIKE-SCRATCH: bookmarklet fast path */
+a.bookmarklet {
+  display: inline-block; padding: .3rem .6rem; border: 1px solid var(--ok); border-radius: 4px;
+  background: #17241d; color: var(--ok); text-decoration: none; cursor: grab; font-weight: bold;
+}
+a.bookmarklet:active { cursor: grabbing; }
