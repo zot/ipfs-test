@@ -1,5 +1,5 @@
 # GithubApp
-**Requirements:** R56, R57, R58, R63, R64, R84, R86
+**Requirements:** R56, R57, R58, R63, R64, R84, R86, R88, R89, R90
 
 The console's entry point, and the counterpart of App for the GitHub-hosted
 page. It wires user intent and component events together and holds no domain

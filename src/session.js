@@ -1,4 +1,7 @@
-// CRC: crc-Session.md | Seq: seq-session.md#1.1 | R59, R60, R61, R62
+// CRC: crc-Session.md | Seq: seq-session.md#1.1 | R59, R60, R61, R62, R88, R90
+
+import { slugify } from './room-label.js';
+
 //
 // The URL is the session's identity. No ?room -> host; ?room=<name> -> guest.
 // A host mints a random room and rewrites the address bar so the page you are on
@@ -18,6 +21,7 @@ export class Session {
     this.crypto = crypto;
     this.role = 'host';
     this.room = null;
+    this.label = ''; // R89: the human half, kept so a rename can edit it alone
   }
 
   // CRC: crc-Session.md | Seq: seq-session.md#2.1 | R61, R62
@@ -37,10 +41,20 @@ export class Session {
     return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
   }
 
-  // CRC: crc-Session.md | Seq: seq-session.md#1.3 | R60
+  // CRC: crc-Session.md | Seq: seq-session.md#1.3 | R60, R88, R90
   // Rewrites the address bar in place, so the page you are on becomes the link.
-  start() {
-    this.room = this.mint();
+  //
+  // R88: the label is a prefix for humans only -- the random half is the whole
+  // of the capability, so a guessable label costs nothing.
+  //
+  // R90, R92: this is also the rename. Calling it again mints a *fresh* random
+  // half rather than re-labelling the old one: the label is part of the topic, so
+  // a rename moves the session either way, and keeping the old half would leave
+  // whoever held the previous link holding all of the capability but one word
+  // from a published list.
+  start(label) {
+    this.label = slugify(label);
+    this.room = this.label ? `${this.label}-${this.mint()}` : this.mint();
     const url = new URL(this.location.href);
     url.searchParams.set('room', this.room);
     this.history.replaceState(null, '', url.toString());

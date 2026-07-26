@@ -60,6 +60,7 @@ the two can be compared (A/B).
 - [x] crc-App.md → `src/app.js`, `src/monitor.js`, `index.html`
 - [x] crc-ConfigHelp.md → `src/config-help.js`, `src/crank-handle.js`
 - [x] crc-Session.md → `src/session.js`
+- [x] crc-RoomLabel.md → `src/room-label.js`
 - [x] crc-Readiness.md → `src/readiness.js`
 - [x] crc-Onboarding.md → `src/onboarding.js`
 - [x] crc-OnboardingView.md → `src/onboarding-view.js`
@@ -88,6 +89,7 @@ the two can be compared (A/B).
 - [x] test-ConfigHelp.md → `test/config-help.test.js`
 - [x] test-Monitor.md → `test/monitor.test.js`
 - [x] test-Session.md → `test/session.test.js`
+- [x] test-RoomLabel.md → `test/room-label.test.js`
 - [x] test-Readiness.md → `test/readiness.test.js`
 - [x] test-Onboarding.md → `test/onboarding.test.js`
 

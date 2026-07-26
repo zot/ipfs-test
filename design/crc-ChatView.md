@@ -1,5 +1,5 @@
 # ChatView
-**Requirements:** R1, R3, R9, R10, R13, R14, R15, R16, R17, R45, R46, R50, R51, R52, R53
+**Requirements:** R1, R3, R9, R10, R13, R14, R15, R16, R17, R45, R46, R50, R51, R52, R53, R89, R90
 
 The only component that touches the DOM. Knows nothing of Kubo, topics,
 multibase, or subscriptions — it renders values handed to it and reports user
@@ -45,6 +45,18 @@ whereas a marked step is still there when they come back.
   the mark from the others, so a player who left this tab to carry a step out
   can see where they stopped when they come back (R53)
 - onJoin/onSend/onLeave/onRetry: callbacks the app registers for user intent
+
+Renaming the room is a small piece of DOM choreography that lives here because
+nothing else may touch the DOM (R90). Pressing *change room* narrows the field to
+the label alone — the random half is not the host's to edit — and the commit is
+on **blur**, so the act of leaving the field to copy the URL is the act that
+settles the name. Enter blurs rather than committing directly, keeping one path.
+The rename itself is a callback: this component knows nothing about minting.
+
+`canRename` is honoured only when the caller states it. The original app types
+its room outright and the console's field is readonly in markup, so an
+unconditional assignment would silently take one of those away; the default is to
+leave each page's own answer alone (R89).
 
 ## Collaborators
 - none — receives plain values, returns intent through callbacks

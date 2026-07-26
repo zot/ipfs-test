@@ -40,9 +40,33 @@ public, so anyone who knows the room name can join and no one who doesn't can.
 Room names are therefore random, with enough entropy (~128 bits) that they
 cannot be guessed or wandered into.
 
+A bare random name is unguessable and unrecognisable, which is a nuisance the
+moment a player has more than one of them — three links in a chat history, all
+hex, and no way to tell the game from the test from last week's. So a host may
+give the room a **label**, which becomes a prefix on the minted name:
+`quiet-harbor-3f9c…`. The random part is untouched and still carries all the
+entropy; the label is decoration for humans and is never trusted as part of the
+capability. The field is pre-filled with a generated adjective-noun pair, so a
+host who types nothing still gets a room they can recognise.
+
+The room is minted the moment a host is ready, so the address bar is a working
+invite straight away rather than after some further step. Renaming is offered
+beside the room field: it opens the field for editing, and the new name is
+committed when the field loses focus. That timing is the point — copying the URL
+means leaving the field, so the act of reaching for the URL is itself what
+commits the name, and a host cannot hand out a link that disagrees with what they
+just typed.
+
+A rename mints a *fresh* random half rather than keeping the existing one. The
+label is part of the pubsub topic, so any rename moves the session to a different
+topic regardless; keeping the old random half would only mean that whoever held
+the previous link still had every part of the capability except a word drawn from
+a published list. Renaming therefore means what it appears to mean — a different
+room, which the old link does not reach.
+
 The link a host shares is simply the page they are already on. When a host
-starts a session, the page mints a random room and rewrites its own address bar
-to include it (`?room=<random>`), so the URL showing in the browser already
+starts a session, the page mints the room and rewrites its own address bar to
+include it (`?room=<label>-<random>`), so the URL showing in the browser already
 *is* the invite. "Here's the page we're on" is the whole of it — there is no
 separate invite to construct, copy, or format. Every instruction a recipient
 might need lives in the page rather than in the shared message, because only the

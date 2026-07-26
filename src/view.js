@@ -21,6 +21,9 @@ export class ChatView {
       steps: $('fail-steps'),
       bmLink: $('bm-link'), goDaemon: $('go-daemon'), // SPIKE-SCRATCH: bookmarklet fast path
       join: $('join'), nick: $('nick'), room: $('room'), beat: $('beat'), joinBtn: $('join-btn'),
+      // R89, R90: console only -- null on the original app's page, which types
+      // its room outright and has nothing to rename.
+      roomNote: $('room-note'), changeRoom: $('change-room'),
       chat: $('chat'), roomName: $('room-name'), presence: $('presence'), leave: $('leave'),
       transcript: $('transcript'), composer: $('composer'), text: $('text'),
       stats: $('stats'), showBeats: $('show-beats'), copy: $('copy'),
@@ -43,6 +46,32 @@ export class ChatView {
       this.handlers.send?.(text);
     };
     this.el.leave.onclick = () => this.handlers.leave?.();
+
+    // R90: renaming opens the field on the label alone -- the random half is not
+    // the host's to edit -- and commits on blur. Leaving the field is precisely
+    // what copying the URL requires, so the link can never disagree with what was
+    // just typed. Enter blurs rather than committing directly, so both routes go
+    // through one path.
+    if (this.el.changeRoom) {
+      this.el.changeRoom.onclick = () => {
+        this.el.room.readOnly = false;
+        this.el.room.value = this.roomLabel || '';
+        if (this.el.roomNote) this.el.roomNote.hidden = false;
+        this.el.room.focus();
+        this.el.room.select();
+      };
+      this.el.room.onkeydown = (e) => { if (e.key === 'Enter') this.el.room.blur(); };
+      this.el.room.onblur = () => {
+        if (this.el.room.readOnly) return;
+        const label = this.el.room.value.trim();
+        this.el.room.readOnly = true;
+        if (this.el.roomNote) this.el.roomNote.hidden = true;
+        const renamed = this.handlers.rename?.(label);
+        if (!renamed) return;
+        this.roomLabel = renamed.label;
+        this.el.room.value = renamed.room;
+      };
+    }
     this.el.retry.onclick = () => this.handlers.retry?.();
     // R50: copy the exact origin so the player need not retype it into the editor.
     this.el.copyOrigin.onclick = () => {
@@ -86,9 +115,18 @@ export class ChatView {
     for (const k of ['fail', 'join', 'chat']) this.el[k].hidden = k !== which;
   }
 
+  // R90: `canRename` is applied only when the caller states it. The original app
+  // types its room outright and the console's field is readonly in markup, so an
+  // unconditional assignment here would silently take one of those away.
   showJoin(prefs = {}) {
     this.el.nick.value = prefs.nick || '';
     this.el.room.value = prefs.room || '';
+    if (prefs.canRename !== undefined) {
+      this.roomLabel = prefs.label || '';
+      if (this.el.changeRoom) this.el.changeRoom.hidden = !prefs.canRename;
+      if (this.el.roomNote) this.el.roomNote.hidden = true;
+      this.el.room.readOnly = true;
+    }
     if (prefs.heartbeatMs != null) this.el.beat.value = String(prefs.heartbeatMs);
     this.#show('join');
     this.el.nick.focus();

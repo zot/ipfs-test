@@ -13,6 +13,7 @@ import { Readiness } from './readiness.js';
 import { Onboarding } from './onboarding.js';
 import { OnboardingView } from './onboarding-view.js';
 import { watchForDaemon } from './monitor.js';
+import { suggestLabel } from './room-label.js';
 
 // R56, R58: the app reads its own origin and would run unchanged from a dev
 // server; the daemon is always the local RPC.
@@ -88,9 +89,27 @@ function onReady(role) {
   monitor.stop();
   crankTab?.source.postMessage('ipfs-crank:connected', crankTab.origin);
   gate.hide();
-  if (role === 'host' && !session.room) session.start();
-  chat.showJoin({ nick: loadPrefs().nick, room: session.room });
+  // R89, R90: a host's room is minted right here, so the address bar is a
+  // working invite immediately rather than after some further step. The label it
+  // arrives with is generated, and renaming is offered beside the field. A guest
+  // has neither -- their room came from the URL and is not theirs to rename.
+  const naming = role === 'host' && !session.room;
+  if (naming) session.start(suggestLabel());
+  chat.showJoin({
+    nick: loadPrefs().nick,
+    room: session.room,
+    label: session.label,
+    canRename: naming,
+  });
 }
+
+// R90, R92: committing a rename mints a fresh room and rewrites the address bar,
+// so the URL is an invite again the instant the field is left -- which is the
+// same instant a host reaching for that URL has to leave it.
+chat.on('rename', (label) => {
+  session.start(label);
+  return { room: session.room, label: session.label };
+});
 
 const onboarding = new Onboarding({ readiness, view: gate, store: localStorage, onReady });
 
@@ -112,9 +131,11 @@ function wire(r) {
   r.on('error', (e) => chat.flashError(`subscription trouble: ${e.message}`));
 }
 
-chat.on('join', async ({ nick, room: name }) => {
+chat.on('join', async ({ nick, room: typed }) => {
   savePrefs({ nick });
-  const roomName = name || session.room || session.start();
+  // R88: the session is the authority on the room, not the field -- a rename
+  // committed on blur has already updated it, and the field is only a mirror.
+  const roomName = session.room || session.start(typed);
   const selfId = await client.selfId();
   chat.setSelfId(selfId);
   chat.setStatus({ connected: true, live: false });

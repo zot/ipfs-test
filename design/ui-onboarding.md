@@ -139,6 +139,42 @@ The loud control is the deliberate post-load gesture that summons the prompt
 not mistaken for notifications. On a denied permission the recovery pointer to
 the site-settings toggle replaces the button (R74).
 
+## Naming the room (R88, R89, R90)
+
+The join form is ui-chat.md's markup reused (R63); the console adds a rename
+control and a note beside the room field, both hidden for a guest, whose room
+came from the URL and is not theirs to rename.
+
+```
++--------------------------------------------------------------+
+|   nickname  [ bill                                 ]         |
+|   room      [ quiet-harbor-3f9c8a2b...  ] [ change room ]    |
+|                                                              |
+|                                   [   enter room   ]         |
++--------------------------------------------------------------+
+              |  change room pressed
+              v
++--------------------------------------------------------------+
+|   room      [ quiet-harbor|             ] [ change room ]    |
+|                                                              |
+|   Type a name and click away - a fresh random ID is added,   |
+|   so the link stays private.                                 |
++--------------------------------------------------------------+
+```
+
+The room is already minted by the time this form appears, so the address bar is
+a working invite before anything is typed (R90) and the field arrives holding a
+generated adjective-noun name (R89). Pressing *change room* narrows the field to
+the **label alone** — the random half is not the host's to edit — selects it, and
+reveals the note.
+
+The commit is on **blur**, and that timing is the whole design. Copying the URL
+means leaving the field, so the act of reaching for the invite is itself what
+commits the name; a host cannot end up handing out a link that disagrees with
+what they just typed. Enter blurs rather than committing directly, so both routes
+run the same path. Committing mints a fresh random half and rewrites the address
+bar (R92), which is why the note promises a new ID rather than a new label.
+
 ## Host lobby (R60, R64)
 
 ```

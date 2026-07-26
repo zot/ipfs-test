@@ -98,7 +98,11 @@
      (from the URL or minted), never typed, so its field is read-only. -->
 <section id="join" hidden>
   <label>nickname <input id="nick" maxlength="32" autocomplete="off"></label>
+  <!-- CRC: ui-onboarding.md | R88, R89, R90 -->
   <label>room <input id="room" readonly></label>
+  <button id="change-room" type="button" hidden>change room</button>
+  <p id="room-note" class="dim" hidden>Type a name and click away &mdash; a fresh
+    random ID is added, so the link stays private.</p>
   <label>heartbeat
     <select id="beat">
       <option value="0">off</option>

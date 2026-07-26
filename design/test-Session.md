@@ -33,3 +33,26 @@ a seedable fake crypto source — no browser.
 **Input:** guest; read(), then read() again after an interleaved no-op
 **Expected:** the same room both times
 **Refs:** crc-Session.md, seq-session.md#2.4
+
+## Test: a label prefixes the room without touching the random half
+**Purpose:** R88 — the label is decoration; a change that eroded or shortened
+the random half would weaken the capability while looking cosmetic.
+**Input:** `start('Café du Monde!!')` on a fake location/history/crypto.
+**Expected:** `cafe-du-monde-<32 hex>`, `label` set to the slug, and the address
+bar rewritten to that room.
+**Refs:** crc-Session.md, crc-RoomLabel.md
+
+## Test: an unusable label yields a bare random room
+**Purpose:** R91 — a label of pure punctuation must not produce a leading hyphen
+or an empty prefix. Falling back to a bare random name is the honest result.
+**Input:** `start` with `'!!!'`, `''`, `null`, `undefined`.
+**Expected:** a bare 32-hex room each time, and an empty `label`.
+**Refs:** crc-Session.md
+
+## Test: renaming mints a new random half, not just a new label
+**Purpose:** R92 — keeping the old random half would leave a holder of the
+previous link holding all of the capability but one word from a published list.
+Uses the *same* label twice so only the random half can account for the change.
+**Input:** `start('game-night')` twice.
+**Expected:** different rooms, and specifically different random halves.
+**Refs:** crc-Session.md
