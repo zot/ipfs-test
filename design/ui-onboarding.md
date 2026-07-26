@@ -1,6 +1,7 @@
 # UI: Onboarding gate and host lobby
 
-Covers R64, R71, R72, R73, R75. References crc-OnboardingView.md, crc-GithubApp.md.
+Covers R64, R71, R72, R73, R75, R77–R81, R85, R86, R87. References
+crc-OnboardingView.md, crc-GithubApp.md.
 
 The console page (`github.html`) reuses the chat state's DOM from ui-chat.md; it
 adds a readiness gate and a host lobby ahead of it. One region is shown at a
@@ -29,17 +30,24 @@ time. The gate shows one step at a time, in order, with the current step marked.
 +--------------------------------------------------------------+
 |  Step 3 of 4 - Let this page talk to your node               |
 |                                                              |
-|  One-time fix. Drag this to your bookmarks bar, then click   |
-|  it. It does the rest.                                       |
+|  One-time fix - drag this up to your bookmarks bar:          |
 |                                                              |
-|      [ >> Fix IPFS CORS ]                                    |
-|      no bookmarks bar? Ctrl+Shift+B                          |
+|  [ >> Fix IPFS CORS ]  <---- After you drag this, click the  |
+|                              bookmark                        |
+|  no bookmarks bar? Ctrl+Shift+B                              |
 |                                                              |
 |  > Not working? Configure it by hand                         |
 |                                                              |
 |                                   [ Done - check again ]     |
 +--------------------------------------------------------------+
 ```
+
+Instructions are anchored to what they refer to rather than gathered above it
+(R87). The drag instruction leads the bookmarklet because dragging comes first;
+the instruction to click it afterwards sits to its right, arrow pointing back at
+the thing just dragged. Read left to right, that is the order the hands move in —
+the same reason the panel's instruction lives inside its button rather than above
+it (R79).
 
 The bookmarklet is the **only** control here that leads anywhere (R77). There is
 no button that opens the daemon's console: one would let a player press it

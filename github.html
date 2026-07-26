@@ -10,6 +10,10 @@
   #gate .step { border: 1px solid #ccc; border-radius: 6px; padding: 1rem 1.2rem; margin: 1rem 0; }
   #gate .warn { background: #fff8c5; border-left: 4px solid #d4a72c; padding: .5rem .8rem; border-radius: 4px; }
   #gate .big { font-size: 1.05rem; padding: .5rem 1.2rem; margin-top: .5rem; }
+  /* R87: the click instruction sits beside the bookmarklet pointing back at it,
+     so reading order matches hand order -- drag it, then click it. */
+  #gate .bm-row { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+  #gate .bm-nudge { color: var(--warn); }
   .shot { color: #888; font-style: italic; }
 </style>
 </head>
@@ -37,9 +41,12 @@
 
   <div id="step-cors" class="step" hidden>
     <h2>Let this page talk to your node</h2>
-    <p><b>One-time fix</b> &mdash; drag this to your bookmarks bar, then click it.
-      It does the rest.</p>
-    <p><a id="gate-bm-link" href="javascript:void 0" draggable="true" class="bookmarklet">&#8600; Fix IPFS CORS</a></p>
+    <p><b>One-time fix</b> &mdash; drag this up to your bookmarks bar:</p>
+    <!-- CRC: ui-onboarding.md | R87 -->
+    <p class="bm-row">
+      <a id="gate-bm-link" href="javascript:void 0" draggable="true" class="bookmarklet">&#8600; Fix IPFS CORS</a>
+      <span class="bm-nudge">&larr;---- After you drag this, click the bookmark</span>
+    </p>
     <p class="dim">No bookmarks bar? Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>.</p>
     <p id="gate-bm-hint" class="warn" hidden>Drag it up to your bookmarks bar first
       &mdash; clicking it here can't reach your node. Then click the <b>bookmark</b>.</p>
