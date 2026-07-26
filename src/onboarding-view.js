@@ -1,4 +1,4 @@
-// CRC: crc-OnboardingView.md | R50, R51, R52, R53, R73, R75
+// CRC: crc-OnboardingView.md | R50, R51, R52, R53, R73, R75, R77, R78
 //
 // The only component that touches the DOM for the readiness gate. Like ChatView,
 // it renders what it is told and reports the player's intent through callbacks.
@@ -6,6 +6,12 @@
 // click bookmarklet and hides the by-hand snippets behind a disclosure (R52); the
 // permission step is a loud, primed control that previews the browser's own
 // wording so the prompt is expected, not mistaken for notifications (R73).
+//
+// The CORS step offers the bookmarklet and nothing else (R77). It used to carry
+// its own "open IPFS console" button, which gave two ways forward -- and a player
+// who pressed the button without having dragged the bookmark landed on a page
+// with nothing to click. The bookmarklet opens that console itself, so being the
+// only route makes the step un-skippable rather than merely tidy.
 
 import { httpHeadersSnippet, pubsubSnippet, bookmarkletHref } from './config-help.js';
 
@@ -17,19 +23,20 @@ export class OnboardingView {
     this.el = {
       gate: $('gate'),
       setup: $('step-setup'), setupDone: $('setup-done'), collapseNote: $('setup-collapse-note'),
-      cors: $('step-cors'), bmLink: $('gate-bm-link'), openConsole: $('gate-open-console'), corsDone: $('cors-done'),
+      cors: $('step-cors'), bmLink: $('gate-bm-link'), bmHint: $('gate-bm-hint'), corsDone: $('cors-done'),
       origin: $('gate-origin'), acao: $('gate-acao'), pubsub: $('gate-pubsub'), copyOrigin: $('gate-copy-origin'),
       perm: $('step-permission'), connect: $('connect-btn'), recovery: $('perm-recovery'),
     };
 
     this.el.setupDone.onclick = () => this.handlers.done?.('setup');
     this.el.corsDone.onclick = () => this.handlers.done?.('cors');
-    // R72: the bookmarklet must run on the daemon's own console tab (its origin is
-    // pre-allowlisted), so open that tab for the player; the link itself is drag-only.
-    this.el.openConsole.onclick = () => window.open(`${apiBase}/webui/`, '_blank');
+    // R72, R77: the link is drag-only. Following it would run the procedure from
+    // this page without leaving a bookmark behind to finish it on the console --
+    // so the click is intercepted, and answered in the page rather than in a
+    // dialog (R78).
     this.el.bmLink.onclick = (e) => {
       e.preventDefault();
-      alert('Drag "Fix IPFS CORS" up to your bookmarks bar, then click it on the IPFS console tab that opened.');
+      this.el.bmHint.hidden = false;
     };
     this.el.copyOrigin.onclick = () => navigator.clipboard?.writeText(origin);
 

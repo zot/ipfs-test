@@ -25,8 +25,13 @@ The app holds no knowledge of how it was delivered: it reads its own
 unchanged from GitHub Pages or from a local dev server.
 
 Because the page is public and static, there is nothing to install to get the
-app itself — the only thing a player installs is IPFS, which they must trust
-anyway. Getting that daemon ready is onboarding.md's job.
+app itself — the only software a player installs is IPFS, which they must trust
+anyway. Getting that daemon ready is onboarding.md's job, and it does ask them to
+install one more thing: a bookmarklet. Worth being exact rather than letting the
+claim above quietly cover it. That is the same capability an extension has —
+arbitrary code, run against their own machine — and the honest difference is that
+it acts only when clicked, on the page in front of them, out of a source small
+enough to read in the link before they drag it.
 
 ## The session is its URL
 

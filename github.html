@@ -37,10 +37,12 @@
 
   <div id="step-cors" class="step" hidden>
     <h2>Let this page talk to your node</h2>
-    <p><b>One-time fix</b> &mdash; drag this to your bookmarks bar:</p>
+    <p><b>One-time fix</b> &mdash; drag this to your bookmarks bar, then click it.
+      It does the rest.</p>
     <p><a id="gate-bm-link" href="javascript:void 0" draggable="true" class="bookmarklet">&#8600; Fix IPFS CORS</a></p>
-    <p>Then open your node's console and click the bookmark on <b>that</b> tab:</p>
-    <p><button id="gate-open-console">open IPFS console &rarr;</button></p>
+    <p class="dim">No bookmarks bar? Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>.</p>
+    <p id="gate-bm-hint" class="warn" hidden>Drag it up to your bookmarks bar first
+      &mdash; clicking it here can't reach your node. Then click the <b>bookmark</b>.</p>
     <details>
       <summary>Not working? Configure it by hand</summary>
       <ol>

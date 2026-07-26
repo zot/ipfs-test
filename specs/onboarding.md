@@ -129,6 +129,54 @@ the place it is needed. Should the browser block the tab anyway, that is
 detectable, and the panel says so and offers the console's address to open by
 hand rather than failing silently.
 
+The panel is drawn into the app's own page and is not a separate window. That was
+measured rather than assumed, because a separate window is the obvious answer to
+the problem this section spends so long on — an instruction surface that survives
+the move to the console tab — and it does not work. A window a page opens cannot
+raise itself: `window.focus()` on your own pop-up is declined the same way
+focusing a stranger's window is. So the surface a separate window would provide
+is buried by the very tab it opens, at exactly the moment it would have been
+useful, and a player working with maximised windows never sees it again. What it
+can still do — receive the console page's progress reports — is worth nothing,
+because by then the bookmarklet has injected its own panel into the console page,
+where the player is already looking. It costs a window and buys nothing the
+in-page panel does not.
+
+Two further limits were measured alongside it, and both shape what is possible
+here. **One gesture buys one window**: whichever `window.open` runs first
+succeeds and any second call in the same gesture returns null, in either order —
+which is why the flow spends each click on exactly one thing. And **the pop-up
+blocker judges by the target window, not the caller**, so a freshly-clicked
+window cannot open anything on a stale one's behalf. There is no arrangement of
+windows that escapes these; the sequence of single human actions is not a
+stylistic choice but the only shape the platform permits.
+
+Framing the console does not escape them either, and this is worth stating
+plainly because the first half of it looks so promising. **The console does frame
+— Kubo sets no `X-Frame-Options` on the API port**, so it renders inside an
+iframe on the app's own page, apparently placing it right beside the
+instructions. It buys nothing. A bookmarklet runs in the **top-level document
+regardless of which frame has focus** (measured: clicking into the frame first
+changes nothing), so it would execute in the app's origin and hit the very
+allowlist wall it exists to remove. Nor can the parent reach in: a cross-origin
+frame exposes no document and no scripts, `postMessage` finds no listener in the
+webui, and `javascript:` navigation of a cross-origin frame is blocked outright.
+Framing yields a picture of the console and no way to act on it.
+
+What the bookmarklet can confirm, and what it cannot, matters here because the
+difference is invisible. After writing, it reads the configuration back — but the
+daemon's config API reads *stored* configuration, and the CORS headers that
+configuration governs are applied when the daemon starts. So the read-back
+returns the new values whether or not the daemon has restarted. It is proof the
+write landed and nothing more, and a player who says they restarted when they did
+not will pass it.
+
+The bookmarklet therefore reports the write, asks for the restart, and stops
+short of announcing that the procedure worked — an announcement it has no
+standing to make. The only check that exercises the thing being fixed is a
+cross-origin request from the app's own origin, and the app is already making one
+every few seconds while the gate is up. Success is the app's to declare.
+
 A by-hand fallback remains for when the bookmarklet cannot run: onboarding shows
 the exact configuration to paste into the daemon's settings editor, keyed to the
 page's own origin (so it is correct for this player) with a control to copy it,

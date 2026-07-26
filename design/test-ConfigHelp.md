@@ -69,3 +69,22 @@ resulting failure is indistinguishable from the one being fixed.
 **Input:** pubsubSnippet(), wrapped and parsed.
 **Expected:** Enabled true, Router gossipsub.
 **Refs:** crc-ConfigHelp.md
+
+## Test: the generated bookmarklet raises no modal dialogs
+**Purpose:** R78 — the crank handle speaks through a panel it draws into the
+page. A modal standing between the player's click and the tab that click is
+meant to open can outlast the click's authority to open one, so a returning
+`alert()` is a functional regression rather than a style lapse. Assertable
+without a DOM because the whole procedure is a string by the time
+`bookmarkletHref` returns.
+**Input:** the generated href, stripped of its `javascript:` scheme and decoded.
+**Expected:** contains no `alert(`, `confirm(` or `prompt(`.
+**Refs:** crc-ConfigHelp.md
+
+## Test: the generated bookmarklet opens the console itself
+**Purpose:** R77 — nothing on the app page opens the daemon's console any more,
+so the bookmarklet must carry that opening. If it stops, the CORS step becomes a
+silent dead end rather than an obviously broken one.
+**Input:** the decoded source, generated with a known API base.
+**Expected:** contains `window.open` and that API base.
+**Refs:** crc-ConfigHelp.md

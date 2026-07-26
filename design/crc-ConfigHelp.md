@@ -1,5 +1,5 @@
 # ConfigHelp
-**Requirements:** R50, R51, R31, R32, R55, R72, R77, R78, R79, R80, R81
+**Requirements:** R50, R51, R31, R32, R55, R72, R77, R78, R79, R80, R81, R82, R83
 
 Pure functions that turn this page's own origin into the exact daemon
 configuration a player must add to fix a CORS failure. No I/O, no DOM.
@@ -55,7 +55,16 @@ browser — App runs its startup on import.
   not happen there — and a tab the browser blocks is detected and named rather
   than failing silently (R81). On the console page, where the config API is
   same-origin, it merges the origin into the allowlist (R55, R72), asks for the
-  restart, and re-reads the config once the daemon answers again
+  restart, and re-reads the config once the daemon answers again — a read that
+  proves the *write* landed and nothing else, because Kubo's config API serves
+  stored configuration while the CORS headers it governs are applied at start.
+  So no branch treats a clean read-back as evidence of a restart, and the crank
+  handle never announces the procedure succeeded; that belongs to the app's own
+  cross-origin probe, the only check that exercises what is being fixed (R82).
+  Throughout, each gesture is spent on at most one window — one gesture buys
+  exactly one, and no window may open anything on another's behalf (R83) — which
+  is why the panel is drawn into the page rather than being a window of its own:
+  a separate window cannot raise itself and would be buried by the tab it opened
 
 ## Collaborators
 - none — App calls these with `location.origin` and hands the result to ChatView

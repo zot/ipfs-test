@@ -58,11 +58,11 @@ the two can be compared (A/B).
 - [x] crc-Measurement.md → `src/room.js`
 - [x] crc-ChatView.md → `src/view.js`
 - [x] crc-App.md → `src/app.js`, `src/monitor.js`, `index.html`
-- [ ] crc-ConfigHelp.md → `src/config-help.js`, `src/crank-handle.js`
+- [x] crc-ConfigHelp.md → `src/config-help.js`, `src/crank-handle.js`
 - [x] crc-Session.md → `src/session.js`
 - [x] crc-Readiness.md → `src/readiness.js`
 - [x] crc-Onboarding.md → `src/onboarding.js`
-- [ ] crc-OnboardingView.md → `src/onboarding-view.js`
+- [x] crc-OnboardingView.md → `src/onboarding-view.js`
 - [x] crc-GithubApp.md → `src/github-app.js`, `github.html`
 
 ### Sequences
@@ -75,7 +75,7 @@ the two can be compared (A/B).
 
 ### UI Layouts
 - [x] ui-chat.md → `index.html`, `src/view.js`
-- [ ] ui-onboarding.md → `github.html`, `src/onboarding-view.js`
+- [x] ui-onboarding.md → `github.html`, `src/onboarding-view.js`
 
 ### Manifests
 - [x] manifest-daemon.md → `SETUP.md`
@@ -105,4 +105,4 @@ the two can be compared (A/B).
 - T5: R42 retired (2026-07-25 github-delivery: no publish command)
 - [ ] O3: The GitHub console's DOM/wiring (OnboardingView, GithubApp, github.html) is verified by a browser load -- it renders the readiness gate, wires all six components, and throws no JS errors -- but the full end-to-end flow (real daemon, a real local-network permission grant, actually joining a room) is PNA-gated, and automated browsers relax that gate, so it needs a manual run in a real Chrome/Firefox. Detection logic is covered by test-Readiness.
 - [ ] O4: ConfigHelp derives the local web UI gateway port from location.port (R32), which is empty for a public origin like github.io, so the console's by-hand allowlist snippet omits the local web UI origin when accessed there -- the user's existing entry is untouched and the bookmarklet path merges rather than replaces, so only the manual-paste fallback is affected. The R40 refs in config-help now serve R32; R40's gateway-port rationale is retired.
-- [ ] O5: R79 and R80 are written on the premise that once the console tab opens the app has no channel to the player, which is what justifies the withheld acknowledgement and the standing instruction left on the app page. A popup instruction surface (popup-probe.html, mechanisms V1/V2/V3) would falsify that premise: a window we control survives the navigation and can keep instructing, close the console tab when done, and receive phase 2's progress via postMessage. Repairing this gap rewrites R79 (the delay's justification, likely its duration) and R80 (which surface carries the standing instruction). Blocked on the manual probe -- real Chrome and Firefox only, automated browsers relax window rules.
+- [x] O5: R79 and R80 are written on the premise that once the console tab opens the app has no channel to the player, which is what justifies the withheld acknowledgement and the standing instruction left on the app page. A popup instruction surface (popup-probe.html, mechanisms V1/V2/V3) would falsify that premise: a window we control survives the navigation and can keep instructing, close the console tab when done, and receive phase 2's progress via postMessage. Repairing this gap rewrites R79 (the delay's justification, likely its duration) and R80 (which surface carries the standing instruction). Blocked on the manual probe -- real Chrome and Firefox only, automated browsers relax window rules.

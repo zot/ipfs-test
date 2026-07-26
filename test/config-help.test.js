@@ -1,7 +1,10 @@
 // CRC: test-ConfigHelp.md | R31, R32, R40, R50, R51, R55
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { allowOriginArray, crankOrigins, httpHeadersSnippet, pubsubSnippet } from '../src/config-help.js';
+import { allowOriginArray, crankOrigins, httpHeadersSnippet, pubsubSnippet, bookmarkletHref } from '../src/config-help.js';
+
+const crankSource = (origin, api) =>
+  decodeURIComponent(bookmarkletHref(origin, api).replace(/^javascript:/, ''));
 
 test('includes this page origin plus the webui default', () => {
   const arr = allowOriginArray('http://k51abc.ipns.localhost:9090');
@@ -78,4 +81,26 @@ test('pubsub snippet parses as JSON with Enabled true', () => {
   const value = JSON.parse(`{${snip.replace(/^"Pubsub":\s*/, '"Pubsub":')}}`);
   assert.equal(value.Pubsub.Enabled, true);
   assert.equal(value.Pubsub.Router, 'gossipsub');
+});
+
+// R78: the crank handle speaks through a panel it draws into the page, never a
+// modal. A blocking dialog standing between the player's click and the tab that
+// click is meant to open can outlast the click's authority to open one, so an
+// alert() creeping back is a real regression rather than a style lapse. The
+// whole procedure is a string by the time it reaches here, which is why this
+// costs no DOM.
+test('the generated bookmarklet raises no modal dialogs', () => {
+  const src = crankSource('https://example.github.io', 'http://127.0.0.1:5001');
+  for (const modal of ['alert(', 'confirm(', 'prompt(']) {
+    assert.ok(!src.includes(modal), `must not call ${modal}`);
+  }
+});
+
+// R77: nothing on the app page opens the daemon's console any more, so the
+// bookmarklet has to carry that opening itself. If it ever stops, the CORS step
+// becomes a dead end rather than an obviously broken one.
+test('the generated bookmarklet opens the console itself', () => {
+  const src = crankSource('https://example.github.io', 'http://127.0.0.1:5001');
+  assert.ok(src.includes('window.open'), 'must open the console tab itself');
+  assert.ok(src.includes('http://127.0.0.1:5001'), "must carry this player's API base");
 });

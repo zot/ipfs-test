@@ -93,7 +93,10 @@ export function pubsubSnippet() {
 // mid-procedure is the exact failure this exists to prevent. Inlining costs a
 // re-drag whenever the code changes, which is cheap with someone on the call.
 export function bookmarkletHref(origin, apiBase) {
-  const cfg = { api: apiBase, app: origin, origins: crankOrigins(origin) }
+  // No `app` origin: the crank handle used to branch on whether it was running
+  // on the app's own page, to decide whether to offer the console. It offers it
+  // from anywhere now (R77), so the app origin is nothing it needs to know.
+  const cfg = { api: apiBase, origins: crankOrigins(origin) }
   return (
     'javascript:' +
     encodeURIComponent(`(${crankHandle})(${JSON.stringify(cfg)})`)
