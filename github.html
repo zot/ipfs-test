@@ -68,14 +68,23 @@
   </div>
 </section>
 
-<!-- Hidden stubs: ChatView wires these on construction. The console drives
-     onboarding through #gate instead, so they exist but are never shown. -->
-<div hidden>
+<!-- CRC: ui-onboarding.md | R86 -->
+<!-- Hidden stubs. ChatView is reused whole (R63) and wires the old app's failure
+     screen on construction, while the console drives onboarding through #gate
+     instead. Every id it queries must exist regardless: #show() toggles #fail on
+     the first ready transition, so a missing node there survives a page load and
+     fails only once a player actually gets connected. -->
+<section id="fail" hidden>
+  <p id="fail-msg"></p>
+  <ol id="fail-steps"></ol>
+  <pre id="fail-origin"></pre>
+  <pre id="fail-acao"></pre>
+  <pre id="fail-pubsub"></pre>
   <a id="bm-link" href="javascript:void 0"></a>
   <button id="go-daemon"></button>
   <button id="copy-origin"></button>
   <button id="retry"></button>
-</div>
+</section>
 
 <!-- CRC: ui-chat.md | R1 -->
 <!-- Reused from the original app: nickname entry. The room is set by the session

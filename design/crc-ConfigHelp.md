@@ -1,5 +1,5 @@
 # ConfigHelp
-**Requirements:** R50, R51, R31, R32, R55, R72, R77, R78, R79, R80, R81, R82, R83
+**Requirements:** R50, R51, R31, R32, R55, R72, R77, R78, R79, R80, R81, R82, R83, R84
 
 Pure functions that turn this page's own origin into the exact daemon
 configuration a player must add to fix a CORS failure. No I/O, no DOM.
@@ -61,6 +61,12 @@ browser — App runs its startup on import.
   So no branch treats a clean read-back as evidence of a restart, and the crank
   handle never announces the procedure succeeded; that belongs to the app's own
   cross-origin probe, the only check that exercises what is being fixed (R82).
+  It does not close the console tab on its own evidence either: the reachability
+  poll answers as soon as the HTTP API is listening, which precedes readiness by
+  a good margin. Having saved and seen the daemon return, it reports to the page
+  that opened the tab and waits to be told the probe got through, closing only
+  then; with no opener, or no answer inside half a minute, it says so and leaves
+  the tab alone (R84).
   Throughout, each gesture is spent on at most one window — one gesture buys
   exactly one, and no window may open anything on another's behalf (R83) — which
   is why the panel is drawn into the page rather than being a window of its own:

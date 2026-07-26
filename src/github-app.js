@@ -57,12 +57,36 @@ const monitor = watchForDaemon(() => client.selfId());
 
 let room = null;
 
+// R84: the crank handle will not close the console tab on its own evidence --
+// its reachability poll answers before the daemon is ready, and only this page's
+// cross-origin probe tests what was actually fixed. It reports when the config
+// is saved; we answer when the probe finally gets through.
+//
+// 127.0.0.1, localhost and ::1 are one daemon and three origins -- the same
+// equivalence crank-handle.js makes in onApi(), and for the same reason: a
+// console page reached as localhost:5001 would otherwise be ignored here and its
+// tab would never close. Reply to the origin that spoke, not to the one we
+// happen to call the daemon by.
+const fromDaemon = (origin) => {
+  try {
+    const o = new URL(origin), api = new URL(API);
+    const loopback = (h) => h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]';
+    return o.protocol === api.protocol && o.port === api.port && loopback(o.hostname);
+  } catch { return false; }
+};
+
+let crankTab = null;
+addEventListener('message', (e) => {
+  if (e.data === 'ipfs-crank:saved' && fromDaemon(e.origin)) crankTab = { source: e.source, origin: e.origin };
+});
+
 // CRC: crc-GithubApp.md | Seq: seq-session.md#1.2 | R60, R64
 // Onboarding reached ready. A host mints a room and the address bar becomes the
 // invite (R60); a guest keeps the room the URL carried. Then a nickname is
 // collected on the reused join form (R63) before the player enters.
 function onReady(role) {
   monitor.stop();
+  crankTab?.source.postMessage('ipfs-crank:connected', crankTab.origin);
   gate.hide();
   if (role === 'host' && !session.room) session.start();
   chat.showJoin({ nick: loadPrefs().nick, room: session.room });

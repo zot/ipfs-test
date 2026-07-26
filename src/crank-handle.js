@@ -170,16 +170,40 @@ export function crankHandle(cfg) {
       show('IPFS settings did not change.', [['Retry', run]], 'still missing: ' + v.missing.join(', '));
       return;
     }
-    // A restart was observed and the settings are in place -- as much as can be
-    // known from this side. Whether the app can now reach the daemon is the
-    // app's own cross-origin probe to answer (R82), so hand off rather than
-    // declare success.
-    show('Restarted, and the settings are in place. Closing this tab…');
+    handOff();
+  }
+
+  // R84: a restart was observed and the settings are in place -- but `alive()`
+  // answers as soon as the HTTP API is listening, which is well before the node
+  // has finished starting, so this page has not earned the right to declare the
+  // job done. The page that opened this tab probes cross-origin, which is the
+  // one check that exercises what was actually fixed (R82). Ask it, and close
+  // only when it answers.
+  function handOff() {
+    let settled = false;
+    if (!window.opener || window.opener.closed) {
+      show('Settings saved and IPFS restarted. Go back to the test tab — it will connect on its own.');
+      return;
+    }
+    show('Settings saved. Waiting for the test page to connect…');
+    addEventListener('message', (e) => {
+      if (e.origin !== cfg.app || e.data !== 'ipfs-crank:connected' || settled) return;
+      settled = true;
+      show('Connected. Closing this tab…');
+      setTimeout(() => {
+        window.close();
+        // Only reached if this tab was not script-opened, so the close was refused.
+        show('Done — close this tab and go back to the test.');
+      }, 600);
+    });
+    window.opener.postMessage('ipfs-crank:saved', cfg.app);
+    // Never wait silently for ever: a restart can take longer than this, but a
+    // player staring at an unchanging line deserves to be told what to check.
     setTimeout(() => {
-      window.close();
-      // Only reached if this tab was not script-opened, so the close was refused.
-      show('Done — close this tab and go back to the test; it will connect on its own.');
-    }, 800);
+      if (settled) return;
+      show('Settings saved, but the test page has not connected yet.', [],
+        'Go back to that tab and see what it says. IPFS can take a while to finish starting.');
+    }, 30000);
   }
 
   // R82: a restart quicker than the poll leaves no dip to see -- but the config

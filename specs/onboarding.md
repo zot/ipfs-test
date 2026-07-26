@@ -177,6 +177,22 @@ standing to make. The only check that exercises the thing being fixed is a
 cross-origin request from the app's own origin, and the app is already making one
 every few seconds while the gate is up. Success is the app's to declare.
 
+Watching the daemon go away and come back is real evidence of a restart, but it
+is not evidence of readiness: the reachability poll answers as soon as the HTTP
+API is listening, which happens well before the node has finished starting up. So
+the console page does not decide on its own that the job is done. Having saved
+the configuration and seen the daemon return, it reports to the page that opened
+it and waits; that page answers when its own probe finally succeeds, and only
+then does the console tab close. Where there is no page to ask — the bookmarklet
+run on a console the player opened themselves — or where no answer arrives, it
+says so plainly and leaves the tab alone rather than closing on a guess.
+
+The reverse direction needs closing too. The panel left standing on the app page
+is deliberate (a player who backs out finds it), but nothing retracts it: by then
+the bookmarklet has finished and the page it drew on is not its own. So when the
+app reaches ready it clears that panel itself, or a connected session sits behind
+an instruction to do something already done.
+
 A by-hand fallback remains for when the bookmarklet cannot run: onboarding shows
 the exact configuration to paste into the daemon's settings editor, keyed to the
 page's own origin (so it is correct for this player) with a control to copy it,

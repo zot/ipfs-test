@@ -77,5 +77,15 @@ export class OnboardingView {
     }
   }
 
-  hide() { this.el.gate.hidden = true; }
+  // CRC: crc-OnboardingView.md | R85
+  // The crank handle left a panel standing on this page on purpose (R80), for a
+  // player who backed out of the console tab. By now it has finished and cannot
+  // retract it -- the page it drew on was never its own -- so the app clears it.
+  // Otherwise a connected session sits behind an instruction to do something
+  // already done.
+  hide() {
+    this.el.gate.hidden = true;
+    document.getElementById('ipfs-crank')?.remove();
+    document.body.style.paddingTop = '';
+  }
 }

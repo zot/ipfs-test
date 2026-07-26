@@ -1,5 +1,5 @@
 # GithubApp
-**Requirements:** R56, R57, R58, R63, R64
+**Requirements:** R56, R57, R58, R63, R64, R84, R86
 
 The console's entry point, and the counterpart of App for the GitHub-hosted
 page. It wires user intent and component events together and holds no domain
@@ -22,6 +22,11 @@ Room, KuboClient, Envelope, Multibase and Measurement untouched (R63).
   Onboarding, else go straight on (R64)
 - onReady: a host reaches the lobby and can start a session (Session mints the
   room, rewrites the URL); a guest joins the room named in the URL
+- answer the console tab: the crank handle reports when it has saved the config
+  and will not close its tab on that alone, because the daemon answers HTTP
+  before it is ready. This page's probe is the only cross-origin one, so it
+  holds the console's message source and replies the moment the probe gets
+  through, which is what lets that tab close (R84)
 - wire: forward Room events to ChatView and ChatView intent to Room, exactly as
   App does (reuse, R63)
 

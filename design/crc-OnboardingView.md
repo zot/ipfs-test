@@ -1,5 +1,5 @@
 # OnboardingView
-**Requirements:** R50, R51, R52, R53, R73, R75, R77, R78
+**Requirements:** R50, R51, R52, R53, R73, R75, R77, R78, R85
 
 The only component that touches the DOM for the readiness gate. Like ChatView,
 it renders values handed to it and reports the player's intent through

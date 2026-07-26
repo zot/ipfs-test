@@ -132,3 +132,11 @@ All regions live in `github.html` and are toggled by the hidden attribute; the
 chat region is the ui-chat.md markup verbatim so ChatView is reused unchanged.
 Every generated value reaches the DOM through `textContent` — see cross-cutting:
 untrusted input.
+
+Because ChatView is reused whole, the page also carries a hidden `#fail` section
+holding every id ChatView wires on construction — the old app's failure screen,
+which this page never shows because the gate replaces it (R86). Those stubs are
+not decoration: `#show()` toggles `#fail` on the first transition to ready, so
+omitting it survives a page load and a rendered gate, then throws at the exact
+moment a player finally gets connected. A component reused wholesale is owed its
+whole DOM, including the parts this page has no use for.
