@@ -59,8 +59,11 @@ export function crankHandle(cfg) {
   document.body.appendChild(bar);
   document.body.style.paddingTop = '6rem';
 
-  // A button may be withheld: [label, handler, delayMs]. It fades in rather than
-  // popping, so the delay reads as deliberate instead of broken.
+  // A button may be withheld: [label, handler, delaySeconds]. R79: it is disabled
+  // against a visible countdown rather than merely appearing late -- a control
+  // that is simply slow reads as broken, while one that is visibly counting reads
+  // as deliberate, which is the whole point of the pause. Labels here carry
+  // sentences, not verbs, so they wrap and align left instead of centring.
   const show = (text, buttons, hint) => {
     say.textContent = text;
     note.textContent = hint || '';
@@ -69,15 +72,28 @@ export function crankHandle(cfg) {
       const el = document.createElement('button');
       el.textContent = b[0];
       el.style.cssText = 'font:inherit;background:#1c2027;color:#d7dce2;border:1px solid #3a424e;' +
-        'border-radius:3px;padding:.3rem .7rem;cursor:pointer';
+        'border-radius:3px;padding:.4rem .8rem;cursor:pointer;text-align:left;white-space:normal;max-width:42rem';
       el.onclick = b[1];
-      if (b[2]) {
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-        el.style.transition = 'opacity 1.5s';
-        setTimeout(() => { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; }, b[2]);
-      }
       row.appendChild(el);
+      if (!b[2]) continue;
+
+      let left = b[2];
+      el.disabled = true;
+      el.style.opacity = '.45';
+      el.style.cursor = 'default';
+      const tick = document.createElement('span');
+      tick.style.cssText = 'align-self:center;color:#79828e;font-variant-numeric:tabular-nums';
+      tick.textContent = left + 's';
+      row.appendChild(tick);
+      const id = setInterval(() => {
+        left -= 1;
+        if (left > 0) { tick.textContent = left + 's'; return; }
+        clearInterval(id);
+        tick.remove();
+        el.disabled = false;
+        el.style.opacity = '1';
+        el.style.cursor = 'pointer';
+      }, 1000);
     }
   };
 
@@ -93,10 +109,14 @@ export function crankHandle(cfg) {
     // and a window a page opens cannot raise itself -- all measured. So the
     // instruction goes before the opening, and its acknowledgement is withheld
     // long enough to be read rather than clicked past.
+    // The instruction lives in the button, not beside it (R79): a player aiming
+    // at a control does not read the prose around it, so the one string they
+    // cannot skip is the one they are aiming at. First person on purpose -- it
+    // is a commitment rather than a dismissal.
     const warnThenOpen = () => show(
-      'When the console opens, click "Fix IPFS CORS" again — on that page.',
-      [['OK', openConsole, 10000]],
-      'Nothing here can reach you once it is open, so this is the last thing I can tell you.');
+      'Your IPFS console is about to open in a new tab.',
+      [['I’m ready — I’ll click "Fix IPFS CORS" again when the console opens', openConsole, 5]],
+      'Nothing here can reach you once it opens, so this is the last thing I can tell you.');
 
     function openConsole() {
       // Not 'noopener': the tab must stay script-opened so it can close itself.

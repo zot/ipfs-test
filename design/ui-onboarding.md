@@ -65,9 +65,13 @@ human gesture, because one gesture buys exactly one window (R83).
               v
 2. the warning, before anything opens
 +--------------------------------------------------------------+
-|  When the console opens, click "Fix IPFS CORS" AGAIN - on    |
-|  that page. Nothing here can reach you once it is open.      |
-|                              [ OK ]   <- fades in after 10s  |
+|  Your IPFS console is about to open in a new tab.            |
+|                                                              |
+|  [ I'm ready - I'll click "Fix IPFS CORS" again when the     |
+|    console opens ]                                    5s     |
+|                                                              |
+|  Nothing here can reach you once it opens, so this is the    |
+|  last thing I can tell you.                                  |
 +--------------------------------------------------------------+
               |  acknowledged -> console tab opens
               v
@@ -77,12 +81,18 @@ human gesture, because one gesture buys exactly one window (R83).
 +--------------------------------------------------------------+
 ```
 
-State 2 is the whole reason for the delay. The acknowledgement is withheld
-because the sentence above it is the last thing the app can say (R79) — measured,
-not assumed: a separate window would be buried by the tab it opens and cannot
-raise itself. State 3 is what a player finds if they back out to the tab they
-came from (R80). A tab the browser refuses is detected between 2 and 3, and the
-panel offers the console's address to open by hand (R81).
+State 2 is the whole reason for the delay, and the instruction sits **in** the
+button rather than above it (R79). Prose beside a control is skipped by a player
+aiming at the control, so the label is the only string guaranteed to be read —
+and it is phrased in the first person, as a commitment rather than a dismissal.
+The button is disabled against a visible countdown, because a control that is
+merely slow reads as broken while one that is visibly counting reads as meant.
+That this is the app's last word is measured, not assumed: a separate window
+would be buried by the tab it opens and cannot raise itself.
+
+State 3 is what a player finds if they back out to the tab they came from (R80),
+and the app clears it once connected (R85). A tab the browser refuses is detected
+between 2 and 3, and the panel offers the console's address to open by hand (R81).
 
 On the daemon's console page the panel is the existing fixed top bar, which
 leaves the console visible beneath it — the page the player was just told to look
