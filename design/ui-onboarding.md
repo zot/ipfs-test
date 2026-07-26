@@ -75,8 +75,8 @@ human gesture, because one gesture buys exactly one window (R83).
 +--------------------------------------------------------------+
 |  Your IPFS console is about to open in a new tab.            |
 |                                                              |
-|  [ I'm ready - I'll click the bookmark I just dragged, on    |
-|    the page that opens ]                              5s     |
+|  5s  [ I'm ready - I'll click the bookmark I just dragged,   |
+|        on the page that opens ]                              |
 |                                                              |
 |  Nothing here can reach you once it opens, so this is the    |
 |  last thing I can tell you.                                  |
@@ -96,6 +96,8 @@ aiming at the control, so the label is the only string guaranteed to be read —
 and it is phrased in the first person, as a commitment rather than a dismissal.
 The button is disabled against a visible countdown, because a control that is
 merely slow reads as broken while one that is visibly counting reads as meant.
+The count leads the button rather than trailing it, so that scanning left to
+right a player meets the reason before the dead control, not after it.
 That this is the app's last word is measured, not assumed: a separate window
 would be buried by the tab it opens and cannot raise itself.
 

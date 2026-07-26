@@ -74,26 +74,30 @@ export function crankHandle(cfg) {
       el.style.cssText = 'font:inherit;background:#1c2027;color:#d7dce2;border:1px solid #3a424e;' +
         'border-radius:3px;padding:.4rem .8rem;cursor:pointer;text-align:left;white-space:normal;max-width:42rem';
       el.onclick = b[1];
-      row.appendChild(el);
-      if (!b[2]) continue;
 
-      let left = b[2];
-      el.disabled = true;
-      el.style.opacity = '.45';
-      el.style.cursor = 'default';
-      const tick = document.createElement('span');
-      tick.style.cssText = 'align-self:center;color:#79828e;font-variant-numeric:tabular-nums';
-      tick.textContent = left + 's';
-      row.appendChild(tick);
-      const id = setInterval(() => {
-        left -= 1;
-        if (left > 0) { tick.textContent = left + 's'; return; }
-        clearInterval(id);
-        tick.remove();
-        el.disabled = false;
-        el.style.opacity = '1';
-        el.style.cursor = 'pointer';
-      }, 1000);
+      if (b[2]) {
+        // The count leads the button rather than trailing it: scanning left to
+        // right, a player meets the reason the control is dead before meeting
+        // the dead control, instead of the other way round.
+        let left = b[2];
+        el.disabled = true;
+        el.style.opacity = '.45';
+        el.style.cursor = 'default';
+        const tick = document.createElement('span');
+        tick.style.cssText = 'align-self:center;color:#e0a44a;font-variant-numeric:tabular-nums';
+        tick.textContent = left + 's';
+        row.appendChild(tick);
+        const id = setInterval(() => {
+          left -= 1;
+          if (left > 0) { tick.textContent = left + 's'; return; }
+          clearInterval(id);
+          tick.remove();
+          el.disabled = false;
+          el.style.opacity = '1';
+          el.style.cursor = 'pointer';
+        }, 1000);
+      }
+      row.appendChild(el);
     }
   };
 
