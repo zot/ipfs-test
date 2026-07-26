@@ -16,9 +16,21 @@ listed here under a system. Read this first to orient.
 
 ## System: Delivery
 
-- [publishing.md](publishing.md) — How the app itself reaches a player:
-  published to IPFS, opened from their own gateway, with a stable IPNS link.
-  What a player must have installed, and what they must not need.
+- [delivery.md](delivery.md) — How the app reaches a player and how a session
+  is shared: a static GitHub Pages origin driving the local daemon, with the
+  random-room URL that is itself the invite. The current delivery model.
+- [publishing.md](publishing.md) — **Reduced** to what survives the pivot: what a
+  player must have (R36), the daemon's own NAT traversal (R37), and dev-serving
+  (R43). Its old IPFS-gateway delivery (R38–R42) is retired; delivery.md owns
+  delivery now.
+
+## System: Onboarding
+
+- [onboarding.md](onboarding.md) — Getting a player's machine ready to be driven
+  by the app: the four readiness conditions, the browser-branched detection
+  scheme (CORS fetch + no-cors probe, refined by the permission query on Chrome),
+  the two grants (CORS bookmarklet, browser local-network permission), and the
+  guided, checkpointed sequence. Absorbs the former config-help behaviour.
 
 ## Summary specs
 
@@ -33,3 +45,11 @@ summary spec over `kubo-rpc.md` becomes worth keeping.
 - **The daemon is the source of truth for messages.** The app does not
   locally echo what it sends; it renders only what the subscription delivers
   back. Touches: chat.md, kubo-rpc.md.
+- **The page's origin is the authorization key.** Both the daemon's CORS
+  allowlist and the browser's local-network permission are keyed to the page's
+  origin — which is why delivery fixes that origin and onboarding authorizes it
+  once. Touches: delivery.md, onboarding.md.
+- **The daemon is the source of truth for readiness.** localStorage records
+  what the player has configured before, but only the daemon's actual response
+  decides whether the app can run; a failed probe re-diagnoses from the daemon
+  rather than trusting the stored expectation. Touches: onboarding.md.

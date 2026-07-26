@@ -46,14 +46,19 @@
 
 ## Feature: publishing
 **Source:** specs/publishing.md
+_The IPFS-delivery requirements R38–R42 are **retired** (superseded by the
+delivery feature R56–R63; see T1–T5). R36, R37, and R43 survive — they describe
+what a player must have, the daemon's own NAT traversal, and the dev-server +
+origin-agnostic property, all unchanged by the pivot. See specs/publishing.md
+(reduced to just those) and delivery.md._
 
 - **R36:** A player needs a Kubo daemon and nothing else — no web server, public IP, VPS, relay operated by us, or account.
 - **R37:** Each player's daemon performs its own NAT traversal and reaches the network through public relays and the DHT, so no player needs to be reachable from outside.
-- **R38:** The app is added to IPFS as a directory and opened via the IPNS-key subdomain gateway form, `http://<key>.ipns.localhost:<gateway-port>/`, whose origin stays constant across content edits because an IPNS key is a stable pointer that does not change when its content does.
-- **R39:** The content-CID subdomain form (`<cid>.ipfs.localhost`) is deliberately not used for the shared link, because its origin embeds the CID and would fall out of the API allowlist on every edit; the immutable `/ipfs/<cid>/` path form is retained only for pinning or naming an exact build.
-- **R40:** Because a gateway origin includes its port (8080 for a default Kubo install), the allowlist lists the IPNS-key origin at that, so the configuration line fits the default install's port.
-- **R41:** The IPNS name is the shared link and survives edits, always resolving to the current build, while a raw `/ipfs/<cid>/` link names one specific version.
-- **R42:** A publish command adds the site directory, reports the resulting CID and both gateway URLs, and republishes the IPNS name to point at it.
+- **~~R38:~~** (Retired T1 — see R56) The app is added to IPFS as a directory and opened via the IPNS-key subdomain gateway form, `http://<key>.ipns.localhost:<gateway-port>/`, whose origin stays constant across content edits because an IPNS key is a stable pointer that does not change when its content does.
+- **~~R39:~~** (Retired T2 — no replacement) The content-CID subdomain form (`<cid>.ipfs.localhost`) is deliberately not used for the shared link, because its origin embeds the CID and would fall out of the API allowlist on every edit; the immutable `/ipfs/<cid>/` path form is retained only for pinning or naming an exact build.
+- **~~R40:~~** (Retired T3 — see R57) Because a gateway origin includes its port (8080 for a default Kubo install), the allowlist lists the IPNS-key origin at that, so the configuration line fits the default install's port.
+- **~~R41:~~** (Retired T4 — see R60) The IPNS name is the shared link and survives edits, always resolving to the current build, while a raw `/ipfs/<cid>/` link names one specific version.
+- **~~R42:~~** (Retired T5 — no replacement) A publish command adds the site directory, reports the resulting CID and both gateway URLs, and republishes the IPNS name to point at it.
 - **R43:** During development the same files are served from a static server at `http://localhost:3000`, also allowlisted; the app holds no knowledge of how it was delivered.
 
 ## Feature: measurement
@@ -67,10 +72,42 @@
 - **R49:** (inferred) The app measures and reports the time from subscribing to the first peer appearing on the topic, because messages published before the gossipsub mesh forms reach nobody, and that warm-up delay is the most direct test of pubsub reliability.
 
 ## Feature: config-help
-**Source:** specs/chat.md
+**Source:** specs/onboarding.md
+_Absorbed by onboarding (formerly sourced from chat.md). R50–R54 are the by-hand
+CORS fallback, the honest step list, the step-marking for resume, and the
+background re-probe of the onboarding readiness gate._
 
 - **R50:** (inferred) When the daemon is unreachable at startup, the failure message includes this page's own origin — read from the browser, so correct for the player's actual gateway and port — and a JSON allowlist snippet adding it to `API.HTTPHeaders.Access-Control-Allow-Origin`, with a control to copy the origin.
 - **R51:** (inferred) The startup failure message includes the `Pubsub` enabled JSON snippet and directs the player to apply both edits in the daemon's settings editor (IPFS Desktop's Settings screen or the WebUI, which stays reachable because its own origin is allowlisted) and restart.
 - **R52:** (inferred) The startup failure screen leads with the one-time fix as a single drag-and-click; the full ordered step list (single actions, honest count) and the by-hand alternative both sit behind a disclosure, surfacing only when the quick path fails so neither competes with it.
 - **R53:** (inferred) Leaving the page to carry out a step marks that step as the current one, so a player interrupted partway through the procedure can see where they stopped when they return to the tab.
 - **R54:** (inferred) While the failure screen is shown the app keeps probing the daemon by itself and proceeds as soon as it answers, because the fix is applied in another window and the moment it takes effect is not a moment the player is watching this page.
+
+## Feature: delivery
+**Source:** specs/delivery.md
+
+- **R56:** The app is a static web page served from a stable public HTTPS origin (GitHub Pages); it is not delivered by IPFS, and Kubo is required only as the pubsub transport.
+- **R57:** The page's origin does not change as the app is edited, so the daemon's CORS allowlist and the browser's local-network permission — both keyed to that origin — are authorized once and persist across builds.
+- **R58:** The app reads its own `location.origin` and runs unchanged from whatever origin serves it (GitHub Pages or a local dev server).
+- **R59:** A session is a room whose name is the capability; room names are random with ~128-bit entropy so they cannot be guessed or wandered into.
+- **R60:** Starting a session mints a random room and rewrites the page's own address bar to `?room=<random>`, so the visible URL is itself the invite — no separate invite artifact is constructed.
+- **R61:** Opening the page with no room marks the visitor a host; opening with `?room=<random>` marks them a guest bound for that room.
+- **R62:** A guest whose daemon is not ready is guided through onboarding and then placed in the requested room, the room name retained across the whole detour.
+- **R63:** The GitHub-hosted console runs alongside the existing locally-served app for A/B comparison; both drive the same local daemon and share the same rooms and (unchanged) chat behaviour.
+
+## Feature: onboarding
+**Source:** specs/onboarding.md
+
+- **R64:** Before joining a room the app confirms readiness and, when any condition is unmet, presents the onboarding flow to host and guest alike, resuming into the room once ready.
+- **R65:** Readiness requires all four of: IPFS installed and running, pubsub enabled, the page's origin in the daemon's CORS allowlist, and the browser's local-network permission granted for that origin.
+- **R66:** The connection attempt is a deliberate action taken after the page has loaded (a "connect" control), never an automatic fetch on page load.
+- **R67:** Because a plain fetch failure is opaque (identical error for down, CORS, or permission), attribution pairs the ordinary CORS fetch with a `no-cors` probe, yielding ready / CORS-problem / needs-attention.
+- **R68:** On Chrome the needs-attention case is refined by querying the local-network permission state (granted / prompt / denied), separating a permission block from a stopped daemon deterministically.
+- **R69:** On Firefox the permission query is nominal (always "prompt"), so permission-denied and daemon-down are indistinguishable; onboarding relies on Firefox's own first-contact prompt (which fires only against a live daemon) and otherwise guides both fixes, biased by localStorage.
+- **R70:** localStorage records the player's prior progress as expectation and fast-path only; the daemon's response is the arbiter, and a failed probe re-diagnoses from the daemon rather than trusting the store.
+- **R71:** The two grants — the daemon-side CORS allowlist and the browser-side local-network permission — are presented as distinct steps and never conflated.
+- **R72:** The CORS grant is installed by a bookmarklet the player runs on the daemon's own console page (never the app page, which hits the very allowlist wall being fixed), merging the origin into the allowlist per R55. (anchors gap A3)
+- **R73:** The browser permission is granted via a loud, primed control whose label warns, before the prompt appears, that the browser is asking to reach the player's own IPFS node rather than to send notifications; the prompt appears only on contact with a live daemon.
+- **R74:** Permission recovery depends on state: when un-decided the control summons the prompt; when denied the app guides the player to the browser's site-settings toggle because the browser will not re-ask; on Chrome the app watches the permission and advances the moment it changes.
+- **R75:** Onboarding is a checkpointed sequence — install, enable pubsub, install the CORS grant, grant the browser permission, then the room — resumable per step, ordered so install-and-run precede the permission step (whose prompt needs a live daemon), and verifying a step against the daemon where its result can be checked rather than only attested. The CORS-grant step's presentation is R50–R54.
+- **R76:** The app monitors daemon health and, on a dropped connection or a failed probe despite localStorage indicating configured, re-diagnoses from the daemon; a browser upgrade or copied profile characteristically loses only the browser permission while the daemon config survives.

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>session over IPFS</title>
+<link rel="stylesheet" href="./src/style.css">
+<style>
+  #gate { max-width: 40rem; }
+  #gate .step { border: 1px solid #ccc; border-radius: 6px; padding: 1rem 1.2rem; margin: 1rem 0; }
+  #gate .warn { background: #fff8c5; border-left: 4px solid #d4a72c; padding: .5rem .8rem; border-radius: 4px; }
+  #gate .big { font-size: 1.05rem; padding: .5rem 1.2rem; margin-top: .5rem; }
+  .shot { color: #888; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- CRC: ui-onboarding.md | R56, R64 -->
+<header>
+  <h1>session over IPFS</h1>
+  <p id="status"><b id="dot">&#9679;</b> <span id="status-text">&hellip;</span></p>
+  <p id="self" class="dim"></p>
+</header>
+
+<!-- CRC: ui-onboarding.md | R64, R71, R72, R73, R75 -->
+<!-- The readiness gate: one step shown at a time, in order -- the failure screen
+     promoted to a proactive, ordered flow (specs/onboarding.md). -->
+<section id="gate" hidden>
+  <div id="step-setup" class="step" hidden>
+    <h2>Get IPFS running</h2>
+    <p>Install <b>IPFS Desktop</b> and launch it, then in its Settings turn on
+      <b>Enable pubsub</b>. <span class="shot">[screenshots]</span></p>
+    <p id="setup-collapse-note" class="warn" hidden>Also make sure your browser is allowed
+      to reach your local network for this page &mdash; we'll confirm that next.</p>
+    <p><button id="setup-done" class="big">I've done this</button></p>
+  </div>
+
+  <div id="step-cors" class="step" hidden>
+    <h2>Let this page talk to your node</h2>
+    <p><b>One-time fix</b> &mdash; drag this to your bookmarks bar:</p>
+    <p><a id="gate-bm-link" href="javascript:void 0" draggable="true" class="bookmarklet">&#8600; Fix IPFS CORS</a></p>
+    <p>Then open your node's console and click the bookmark on <b>that</b> tab:</p>
+    <p><button id="gate-open-console">open IPFS console &rarr;</button></p>
+    <details>
+      <summary>Not working? Configure it by hand</summary>
+      <ol>
+        <li>Copy this page's origin:
+          <div class="snip"><pre id="gate-origin"></pre><button id="gate-copy-origin">copy</button></div>
+        </li>
+        <li>Put both of these inside <code>API.HTTPHeaders</code>: <pre id="gate-acao"></pre></li>
+        <li>Make sure pubsub is on: <pre id="gate-pubsub"></pre></li>
+        <li>Save, then restart IPFS Desktop.</li>
+      </ol>
+    </details>
+    <p><button id="cors-done" class="big">Done &mdash; check again</button></p>
+  </div>
+
+  <div id="step-permission" class="step" hidden>
+    <h2>Connect to your node</h2>
+    <p class="warn">Your browser will now ask to reach devices on your <b>local network</b>.
+      That is your own IPFS node &mdash; <b>not</b> a notifications request. Click <b>Allow</b>.</p>
+    <p><button id="connect-btn" class="big">Connect to my IPFS node</button></p>
+    <p id="perm-recovery" class="warn" hidden>You blocked this earlier, so the browser won't ask
+      again. Open this page's site settings (the icon left of the address bar) and turn
+      <b>local network access</b> back on &mdash; it will connect on its own.</p>
+  </div>
+</section>
+
+<!-- Hidden stubs: ChatView wires these on construction. The console drives
+     onboarding through #gate instead, so they exist but are never shown. -->
+<div hidden>
+  <a id="bm-link" href="javascript:void 0"></a>
+  <button id="go-daemon"></button>
+  <button id="copy-origin"></button>
+  <button id="retry"></button>
+</div>
+
+<!-- CRC: ui-chat.md | R1 -->
+<!-- Reused from the original app: nickname entry. The room is set by the session
+     (from the URL or minted), never typed, so its field is read-only. -->
+<section id="join" hidden>
+  <label>nickname <input id="nick" maxlength="32" autocomplete="off"></label>
+  <label>room <input id="room" readonly></label>
+  <label>heartbeat
+    <select id="beat">
+      <option value="0">off</option>
+      <option value="2000">every 2s</option>
+      <option value="5000" selected>every 5s</option>
+      <option value="15000">every 15s</option>
+    </select>
+  </label>
+  <button id="join-btn">enter room</button>
+  <p class="note">Share this page's URL to invite others &mdash; the link <em>is</em> the room.</p>
+</section>
+
+<!-- CRC: ui-chat.md | R14, R15 -->
+<section id="chat" hidden>
+  <div id="bar">
+    <b id="room-name"></b>
+    <span id="presence" class="dim"></span>
+    <button id="leave">leave</button>
+  </div>
+  <ol id="transcript"></ol>
+  <form id="composer">
+    <input id="text" autocomplete="off" placeholder="type a message">
+    <button>send</button>
+  </form>
+  <details id="stats-box" open>
+    <summary>measurements</summary>
+    <dl id="stats"></dl>
+    <label class="dim"><input type="checkbox" id="show-beats"> show heartbeats in transcript</label>
+    <button id="copy">copy report</button>
+  </details>
+</section>
+
+<script type="module" src="./src/github-app.js"></script>
+</body>
+</html>
