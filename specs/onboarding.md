@@ -92,18 +92,48 @@ only from the daemon's *own* console page (its web UI), whose origin ships
 pre-allowlisted, so a call from there can write the new entry.
 
 The player is therefore handed a **bookmarklet** — dragged from the app page to
-their bookmarks bar, then clicked while on the daemon's console page. Because a
-bookmarklet runs on whatever page is open, onboarding opens the daemon's console
-for the player and instructs them to click the bookmarklet there. The bookmarklet
-reads the current allowlist and **merges** the page's origin in, adding only what
-is required and removing nothing — in particular it does not grant any remote
-website access to the local daemon. No hand-editing of JSON is required.
+their bookmarks bar, then clicked. The instruction on the app page is exactly
+that and nothing more: drag it, click it. The bookmarklet reads the current
+allowlist and **merges** the page's origin in, adding only what is required and
+removing nothing — in particular it does not grant any remote website access to
+the local daemon. No hand-editing of JSON is required.
+
+Because a bookmarklet runs on whatever page is open, and the daemon's console is
+the only page it can do its work from, the bookmarklet has to get the player
+there itself. **It is the only route to that console** — the app page offers no
+other control that opens it. That is deliberate: a separate "open my console"
+button gives a player two ways forward, and the one who presses the button
+without having dragged the bookmark arrives on a page with nothing to click and
+no idea what was expected. One route means the step cannot be walked past
+without the tool that completes it.
+
+So the first click, wherever it lands, opens the bookmarklet's own panel drawn
+into the current page — never a modal dialog, which would stand blocking between
+the player's click and the tab about to be opened, long enough for the browser
+to withdraw the click's authority to open it. The panel offers to open the
+console. Pressing that does *not* open it yet: the panel first states that the
+bookmarklet must be clicked **again**, on the page that is about to appear, and
+holds its acknowledgement control back for long enough that the sentence is read
+rather than clicked past. Only on acknowledgement does the console open.
+
+The delay is bought with a real cost, and it buys the last thing that can be
+said. Once the console tab is open the app cannot reach the player at all: the
+console is the daemon's own page and carries none of the app's UI, and the app's
+page is behind it. The instruction has to land before the channel closes. For
+the same reason the panel stays behind on the app page showing that standing
+instruction, so a player who backs out to where they came from finds it waiting.
+
+The console opens as an ordinary browser tab, never a small pop-up window — a
+pop-up has no bookmarks bar, so the second click would be impossible in exactly
+the place it is needed. Should the browser block the tab anyway, that is
+detectable, and the panel says so and offers the console's address to open by
+hand rather than failing silently.
 
 A by-hand fallback remains for when the bookmarklet cannot run: onboarding shows
 the exact configuration to paste into the daemon's settings editor, keyed to the
 page's own origin (so it is correct for this player) with a control to copy it,
 plus the pubsub-enabled block. This full checklist and by-hand alternative sit
-behind a disclosure so they do not compete with the one-click path; the honest
+behind a disclosure so they do not compete with the bookmarklet path; the honest
 step count is stated rather than undersold. Because the procedure spans two tabs
 and a daemon restart, a step the player leaves the page to perform is marked as
 the current one, so an interrupted player sees where they stopped on return; and

@@ -1,5 +1,5 @@
 # OnboardingView
-**Requirements:** R50, R51, R52, R53, R73, R75
+**Requirements:** R50, R51, R52, R53, R73, R75, R77, R78
 
 The only component that touches the DOM for the readiness gate. Like ChatView,
 it renders values handed to it and reports the player's intent through
@@ -13,6 +13,15 @@ the by-hand snippets behind a disclosure (R52, R50, R51); and the permission
 step is a loud, primed control whose label warns — before the browser's prompt
 appears — that the browser is about to ask to reach the player's own IPFS node,
 not to send notifications (R73).
+
+The CORS step offers the bookmarklet and **nothing else** — in particular no
+control of its own that opens the daemon's console (R77). The bookmarklet opens
+it; a second route would let a player press it without having dragged the
+bookmark and arrive on a page with nothing to click. For the same reason a
+*click* on the bookmarklet link is intercepted rather than followed: the link is
+there to be dragged, and clicking it would run the procedure without leaving a
+bookmark behind to finish it. What that interception says is said in the page
+(R78), not in a dialog.
 
 ## Knows
 - elements: the step list, the bookmarklet panel, the by-hand snippets, the loud

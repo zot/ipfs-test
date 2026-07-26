@@ -1,5 +1,5 @@
 # ConfigHelp
-**Requirements:** R50, R51, R31, R32, R55
+**Requirements:** R50, R51, R31, R32, R55, R72, R77, R78, R79, R80, R81
 
 Pure functions that turn this page's own origin into the exact daemon
 configuration a player must add to fix a CORS failure. No I/O, no DOM.
@@ -37,7 +37,25 @@ browser — App runs its startup on import.
 - bookmarkletHref: stringifies the crank handle into a `javascript:` URL with
   this player's origins and API base baked in as its argument. Inlined rather
   than fetched at click time, so a slow IPNS resolution cannot strand a player
-  mid-procedure (gap A3 — its behaviour is not yet anchored)
+  mid-procedure
+- crankHandle: the procedure that gets stringified — the sequencing lives here
+  rather than in the player's head. It runs in whatever page the bookmark was
+  clicked on and speaks through a panel it draws into that page, never a modal
+  dialog: a modal standing between the click and the tab that click is meant to
+  open can outlast the click's authority to open one (R78). Away from the
+  daemon's console it is the **only** way there (R77) — it offers to open the
+  console, then holds the opening back behind a stated warning that the bookmark
+  must be clicked again on the page about to appear, with the acknowledgement
+  withheld long enough to be read (R79). That delay buys the last thing that can
+  be said: once the console tab exists, the console is the daemon's own page and
+  the app's page is behind it, so nothing on this side can reach the player. For
+  the same reason the panel stays on the app page carrying that instruction, for
+  a player who backs out to where they came from (R80). The console opens as an
+  ordinary tab — a pop-up window has no bookmarks bar, so the second click could
+  not happen there — and a tab the browser blocks is detected and named rather
+  than failing silently (R81). On the console page, where the config API is
+  same-origin, it merges the origin into the allowlist (R55, R72), asks for the
+  restart, and re-reads the config once the daemon answers again
 
 ## Collaborators
 - none — App calls these with `location.origin` and hands the result to ChatView
