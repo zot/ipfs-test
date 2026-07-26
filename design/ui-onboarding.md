@@ -75,8 +75,8 @@ human gesture, because one gesture buys exactly one window (R83).
 +--------------------------------------------------------------+
 |  Your IPFS console is about to open in a new tab.            |
 |                                                              |
-|  [ I'm ready - I'll click "Fix IPFS CORS" again when the     |
-|    console opens ]                                    5s     |
+|  [ I'm ready - I'll click the bookmark I just dragged, on    |
+|    the page that opens ]                              5s     |
 |                                                              |
 |  Nothing here can reach you once it opens, so this is the    |
 |  last thing I can tell you.                                  |
@@ -85,7 +85,8 @@ human gesture, because one gesture buys exactly one window (R83).
               v
 3. left standing on the app page
 +--------------------------------------------------------------+
-|  Waiting. Click "Fix IPFS CORS" on the IPFS console tab.     |
+|  Waiting. Click the bookmark you dragged, on the IPFS        |
+|  console tab.                                                |
 +--------------------------------------------------------------+
 ```
 
@@ -97,6 +98,14 @@ The button is disabled against a visible countdown, because a control that is
 merely slow reads as broken while one that is visibly counting reads as meant.
 That this is the app's last word is measured, not assumed: a separate window
 would be buried by the tab it opens and cannot raise itself.
+
+The bookmark is named by **provenance** — "the bookmark I just dragged" — and
+never by its label. "Fix IPFS CORS" names two things that look identical: the
+link still sitting on the app page and the bookmark now in the bar. Only one of
+them was just dragged, and only that one works; clicking the other gets the hint
+and no progress, which reads as the flow being broken rather than as a
+misaimed click. The label carries the location too, since by R79's own logic it
+is the only string guaranteed to be read and cannot lean on the line above it.
 
 State 3 is what a player finds if they back out to the tab they came from (R80),
 and the app clears it once connected (R85). A tab the browser refuses is detected

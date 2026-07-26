@@ -113,9 +113,14 @@ export function crankHandle(cfg) {
     // at a control does not read the prose around it, so the one string they
     // cannot skip is the one they are aiming at. First person on purpose -- it
     // is a commitment rather than a dismissal.
+    //
+    // Named by provenance, never by its label: "Fix IPFS CORS" is both the link
+    // still sitting on the app page and the bookmark now in the bar, and they
+    // look identical. Only one of them was just dragged. Clicking the wrong one
+    // gets a hint and no progress, which reads as the flow being broken.
     const warnThenOpen = () => show(
       'Your IPFS console is about to open in a new tab.',
-      [['I’m ready — I’ll click "Fix IPFS CORS" again when the console opens', openConsole, 5]],
+      [['I’m ready — I’ll click the bookmark I just dragged, on the page that opens', openConsole, 5]],
       'Nothing here can reach you once it opens, so this is the last thing I can tell you.');
 
     function openConsole() {
@@ -128,7 +133,7 @@ export function crankHandle(cfg) {
         return;
       }
       // R80: left standing, for a player who backs out to the tab they came from.
-      show('Waiting. Click "Fix IPFS CORS" on the IPFS console tab.');
+      show('Waiting. Click the bookmark you dragged, on the IPFS console tab.');
     }
 
     show('This bookmark does its work on your node’s own console page.',
