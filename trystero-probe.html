@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trystero probe</title>
+<!-- THROWAWAY SPIKE. Not part of the app. Question it answers: if we drop the
+     Kubo daemon and go browser-to-browser over WebRTC (signalled through public
+     BitTorrent trackers or Nostr relays via Trystero), how often do peers
+     actually connect, how — host / srflx (STUN) / relay (TURN) — and how fast?
+     Open the same ?room= link on several machines; each page reports what it
+     sees, and "copy report" yields JSON to send back.
+     ?via=nostr (default) | torrent   picks the signalling medium. -->
+<style>
+  :root { --fg:#222; --bg:#fff; --dim:#666; --line:#ddd; --ok:#0a0; --bad:#c00; --warn:#b26a00; --card:#f6f8fa; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#ddd; --bg:#16181b; --dim:#999; --line:#333; --card:#1f2226; --ok:#4c4; --bad:#f66; } }
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 56rem; margin: 1.2rem auto; padding: 0 1rem; color:var(--fg); background:var(--bg); }
+  h1 { font-size:1.25rem; margin:.2rem 0; } h2 { font-size:1rem; margin:1.3rem 0 .4rem; }
+  code, .mono { font-family: ui-monospace, monospace; font-size:.88em; }
+  .dim { color:var(--dim); } .ok { color:var(--ok); font-weight:600; } .bad { color:var(--bad); font-weight:600; } .warn { color:var(--warn); font-weight:600; }
+  table { border-collapse:collapse; width:100%; font-size:.88rem; }
+  th, td { border:1px solid var(--line); padding:.25rem .45rem; text-align:left; vertical-align:top; }
+  th { background:var(--card); }
+  input, button { font:inherit; padding:.25rem .5rem; }
+  .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.3rem 0; }
+  #log { background:var(--card); border:1px solid var(--line); padding:.5rem; height:14rem; overflow:auto; font-size:.82rem; }
+  #log div { white-space:pre-wrap; word-break:break-word; }
+  #share { flex:1; min-width:16rem; }
+</style>
+</head>
+<body>
+<h1>Trystero probe</h1>
+<p class="dim">Open the share link on other machines (ideally other networks, and one phone on cellular).
+Leave every page open a minute, send a message or two, then hit <b>copy report</b> on each and send the JSON.</p>
+
+<div class="row"><b>via</b> <span id="via" class="mono"></span>
+  · <b>room</b> <span id="room" class="mono"></span>
+  · <b>me</b> <span id="me" class="mono"></span></div>
+<div class="row"><input id="share" readonly><button id="copyLink">copy link</button></div>
+<div class="row"><label>my name <input id="name" size="14"></label>
+  <span class="dim">(labels you in other peers' tables)</span></div>
+
+<h2>Signalling</h2>
+<div id="relays" class="mono dim">connecting…</div>
+
+<h2>Peers</h2>
+<table>
+  <thead><tr><th>peer</th><th>name</th><th>joined after</th><th>path</th><th>RTT last / median (n)</th><th>state</th></tr></thead>
+  <tbody id="peers"><tr><td colspan="6" class="dim">none yet</td></tr></tbody>
+</table>
+
+<h2>Messages</h2>
+<div class="row"><input id="msg" size="40" placeholder="say something"><button id="send">send</button></div>
+<div id="log"></div>
+
+<div class="row" style="margin-top:1rem"><button id="report">copy report</button><span id="reported" class="dim"></span></div>
+
+<script type="module">
+const params = new URLSearchParams(location.search);
+const via = params.get('via') === 'torrent' ? 'torrent' : 'nostr';
+let roomId = params.get('room');
+if (!roomId) {
+  roomId = 'probe-' + Math.random().toString(36).slice(2, 8);
+  params.set('room', roomId);
+  history.replaceState(null, '', '?' + params);
+}
+const $ = id => document.getElementById(id);
+$('via').textContent = via;
+$('room').textContent = roomId;
+$('share').value = location.href;
+$('copyLink').onclick = () => navigator.clipboard.writeText(location.href);
+
+const t0 = performance.now();
+const since = () => ((performance.now() - t0) / 1000).toFixed(1) + 's';
+const events = [];
+function log(text, cls) {
+  events.push({t: since(), text});
+  const d = document.createElement('div');
+  d.textContent = `[${since()}] ${text}`;
+  if (cls) d.className = cls;
+  $('log').append(d);
+  $('log').scrollTop = $('log').scrollHeight;
+}
+
+let myName = '';
+try { myName = localStorage.getItem('trystero-probe-name') || ''; } catch {}
+$('name').value = myName;
+
+const mod = await import(via === 'nostr'
+  ? 'https://cdn.jsdelivr.net/npm/@trystero-p2p/nostr@0.26.0/+esm'
+  : 'https://cdn.jsdelivr.net/npm/@trystero-p2p/torrent@0.26.0/+esm');
+const {joinRoom, selfId, getRelaySockets} = mod;
+$('me').textContent = selfId;
+log(`loaded @trystero-p2p/${via}@0.26.0, joining as ${selfId}`);
+
+const joinErrors = [];
+const room = joinRoom({appId: 'zot-ipfs-test-probe'}, roomId, {
+  onJoinError: d => {
+    joinErrors.push({t: since(), peerId: d.peerId, error: String(d.error)});
+    log(`JOIN ERROR ${d.peerId ?? ''}: ${d.error}`, 'bad');
+  },
+});
+
+const peers = {};  // id -> {joinedAt, name, path, rtts[], left}
+const hello = room.makeAction('hello');
+const chat = room.makeAction('chat');
+
+room.onPeerJoin = id => {
+  peers[id] = {joinedAt: since(), name: '', path: null, rtts: [], left: null};
+  log(`peer joined ${id}`, 'ok');
+  hello.send({name: myName}, {target: id});
+  render();
+};
+room.onPeerLeave = id => {
+  if (peers[id]) peers[id].left = since();
+  log(`peer left ${id}`, 'warn');
+  render();
+};
+hello.onMessage = (d, {peerId}) => {
+  if (peers[peerId]) peers[peerId].name = String(d?.name ?? '');
+  render();
+};
+chat.onMessage = (d, {peerId}) => log(`${peers[peerId]?.name || peerId}: ${d?.text}`);
+
+$('name').onchange = () => {
+  myName = $('name').value.trim();
+  try { localStorage.setItem('trystero-probe-name', myName); } catch {}
+  hello.send({name: myName});
+};
+function sendMsg() {
+  const text = $('msg').value.trim();
+  if (!text) return;
+  chat.send({text});
+  log(`me: ${text}`);
+  $('msg').value = '';
+}
+$('send').onclick = sendMsg;
+$('msg').onkeydown = e => { if (e.key === 'Enter') sendMsg(); };
+
+// What the ICE agent actually chose: host = same LAN, srflx = hole-punched via
+// STUN, relay = TURN. Without a TURN server configured, a relay path is
+// impossible, so peers that would need one surface as join errors instead.
+async function pathOf(pc) {
+  const stats = await pc.getStats();
+  let pair = null;
+  stats.forEach(s => {
+    if (s.type === 'transport' && s.selectedCandidatePairId) pair = stats.get(s.selectedCandidatePairId);
+  });
+  if (!pair) stats.forEach(s => { if (s.type === 'candidate-pair' && (s.selected || (s.nominated && s.state === 'succeeded'))) pair = s; });
+  if (!pair) return null;
+  const l = stats.get(pair.localCandidateId), r = stats.get(pair.remoteCandidateId);
+  return {
+    local: l?.candidateType, remote: r?.candidateType,
+    protocol: l?.protocol, network: l?.networkType ?? null,
+    pairRtt: pair.currentRoundTripTime != null ? Math.round(pair.currentRoundTripTime * 1000) : null,
+  };
+}
+
+const median = a => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+
+async function tick() {
+  const pcs = room.getPeers();
+  for (const [id, pc] of Object.entries(pcs)) {
+    const p = peers[id];
+    if (!p) continue;
+    try { p.path = await pathOf(pc); } catch {}
+    p.state = pc.connectionState;
+    try { const ms = await room.ping(id); p.rtts.push(Math.round(ms)); if (p.rtts.length > 200) p.rtts.shift(); } catch {}
+  }
+  renderRelays();
+  render();
+}
+setInterval(tick, 2000);
+
+function renderRelays() {
+  let socks = {};
+  try { socks = getRelaySockets?.() ?? {}; } catch {}
+  const names = ['connecting', 'open', 'closing', 'closed'];
+  const lines = Object.entries(socks).map(([url, ws]) => `${names[ws?.readyState] ?? '?'}  ${url}`);
+  $('relays').textContent = lines.length ? lines.join('\n') : '(no relay sockets reported)';
+  $('relays').style.whiteSpace = 'pre';
+}
+
+function render() {
+  const rows = Object.entries(peers).map(([id, p]) => {
+    const path = p.path ? `${p.path.local}→${p.path.remote} ${p.path.protocol ?? ''}${p.path.network ? ' (' + p.path.network + ')' : ''}` : '…';
+    const pathCls = !p.path ? 'dim' : (p.path.local === 'relay' || p.path.remote === 'relay') ? 'warn' : 'ok';
+    const last = p.rtts.at(-1);
+    return `<tr><td class="mono">${id}</td><td>${esc(p.name)}</td><td>${p.joinedAt}</td>`
+      + `<td class="${pathCls}">${path}</td>`
+      + `<td>${last ?? '–'} / ${median(p.rtts) ?? '–'} ms (${p.rtts.length})</td>`
+      + `<td>${p.left ? '<span class="warn">left ' + p.left + '</span>' : esc(p.state ?? '')}</td></tr>`;
+  });
+  $('peers').innerHTML = rows.join('') || '<tr><td colspan="6" class="dim">none yet</td></tr>';
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('report').onclick = async () => {
+  let socks = {};
+  try { socks = getRelaySockets?.() ?? {}; } catch {}
+  const report = {
+    at: new Date().toISOString(), uptime: since(), via, roomId, selfId, name: myName,
+    ua: navigator.userAgent,
+    relays: Object.fromEntries(Object.entries(socks).map(([u, ws]) => [u, ws?.readyState])),
+    peers: Object.fromEntries(Object.entries(peers).map(([id, p]) => [id, {
+      name: p.name, joinedAt: p.joinedAt, left: p.left, state: p.state, path: p.path,
+      rtt: {n: p.rtts.length, median: median(p.rtts), min: p.rtts.length ? Math.min(...p.rtts) : null, max: p.rtts.length ? Math.max(...p.rtts) : null},
+    }])),
+    joinErrors, events,
+  };
+  await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+  $('reported').textContent = 'copied ' + new Date().toLocaleTimeString();
+};
+renderRelays();
+</script>
+</body>
+</html>
