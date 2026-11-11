@@ -217,7 +217,7 @@ const room = joinRoom({appId: 'zot-ipfs-test-probe', rtcConfig, rtcPolyfill: Log
   onJoinError: d => {
     // Attribute the failure to the newest unclaimed attempt that never reached
     // connected/completed. Heuristic, hence "likely" in the log.
-    const a = [...attempts].reverse().find(x => !x.peerId && !x.error && !x.ice.some(s => /connected|completed/.test(s)));
+    const a = [...attempts].reverse().find(x => !x.peerId && !x.error && !x.ice.some(s => / (connected|completed)$/.test(s)));
     if (a) { a.peerId = d.peerId; a.error = String(d.error); }
     joinErrors.push({t: since(), peerId: d.peerId, error: String(d.error), attempt: a?.n ?? null});
     log(`JOIN ERROR ${d.peerId ?? ''}: ${d.error}`, 'bad');
