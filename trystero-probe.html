@@ -10,7 +10,10 @@
      actually connect, how — host / srflx (STUN) / relay (TURN) — and how fast?
      Open the same ?room= link on several machines; each page reports what it
      sees, and "copy report" yields JSON to send back.
-     ?via=nostr (default) | torrent   picks the signalling medium. -->
+     ?via=nostr (default) | torrent   picks the signalling medium.
+     ?turn=turn:host:port&tu=U&tp=P   adds a TURN server (Metered's once-public
+                                      "Open Relay" credentials no longer work)
+     ?force=relay                     forbids direct paths (proves TURN works) -->
 <style>
   :root { --fg:#222; --bg:#fff; --dim:#666; --line:#ddd; --ok:#0a0; --bad:#c00; --warn:#b26a00; --card:#f6f8fa; }
   @media (prefers-color-scheme: dark) { :root { --fg:#ddd; --bg:#16181b; --dim:#999; --line:#333; --card:#1f2226; --ok:#4c4; --bad:#f66; } }
@@ -39,6 +42,9 @@ Leave every page open a minute, send a message or two, then hit <b>copy report</
 <div class="row"><input id="share" readonly><button id="copyLink">copy link</button></div>
 <div class="row"><label>my name <input id="name" size="14"></label>
   <span class="dim">(labels you in other peers' tables)</span></div>
+
+<h2>This device</h2>
+<div id="nat" class="mono dim">testing NAT…</div>
 
 <h2>Signalling</h2>
 <div id="relays" class="mono dim">connecting…</div>
@@ -93,11 +99,129 @@ const {joinRoom, selfId, getRelaySockets} = mod;
 $('me').textContent = selfId;
 log(`loaded @trystero-p2p/${via}@0.26.0, joining as ${selfId}`);
 
+// ---- ICE servers -----------------------------------------------------------
+const STUN = ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'];
+const iceServers = STUN.map(urls => ({urls}));
+const turnParam = params.get('turn');
+const turnServer = turnParam && {urls: turnParam, username: params.get('tu') ?? '', credential: params.get('tp') ?? ''};
+if (turnServer) iceServers.push(turnServer);
+const forceRelay = params.get('force') === 'relay';
+const rtcConfig = {iceServers, ...(forceRelay ? {iceTransportPolicy: 'relay'} : {})};
+if (turnParam) log(`TURN: ${turnParam}${forceRelay ? ' (forced: relay only)' : ''}`);
+if (turnServer && (!turnServer.username || !turnServer.credential))
+  log('TURN needs both tu= (username) and tp= (password); browsers refuse a TURN server without them, so no connection can be made', 'bad');
+
+// ---- candidate classification ---------------------------------------------
+// "candidate:<foundation> <component> <proto> <priority> <addr> <port> typ <type> ..."
+// host candidates are split by how they are addressed: an mDNS ".local" name
+// (Chrome hides LAN IPs this way; the far side must resolve it by multicast),
+// or a literal v4/v6 address.
+function classify(c) {
+  const f = c.replace(/^a=/, '').trim().split(/\s+/);
+  const typ = f[f.indexOf('typ') + 1] ?? '?';
+  const addr = f[4] ?? '';
+  const kind = typ !== 'host' ? typ : addr.endsWith('.local') ? 'host-mdns' : addr.includes(':') ? 'host-v6' : 'host-v4';
+  return `${kind}/${(f[2] ?? '').toLowerCase()}`;
+}
+const bump = (o, k) => { o[k] = (o[k] || 0) + 1; };
+const fmt = o => Object.entries(o).map(([k, v]) => `${k}×${v}`).join(' ') || 'none';
+
+// ---- every peer connection Trystero makes is one of these -------------------
+// A failed pair otherwise leaves no trace of why. This records which candidate
+// kinds each side offered and how ICE progressed, so a failure can be read as
+// "no usable candidates" vs "candidates present, every check failed".
+const attempts = [];
+window.probeAttempts = attempts;  // for inspection from devtools
+class LoggedPC extends RTCPeerConnection {
+  constructor(cfg) {
+    super(cfg);
+    const a = this.diag = {n: attempts.length + 1, created: since(), local: {}, remote: {}, ice: [], peerId: null, error: null};
+    const seenL = new Set(), seenR = new Set();
+    this._seenR = seenR;
+    attempts.push(a);
+    this.addEventListener('icecandidate', e => {
+      const s = e.candidate?.candidate;
+      if (s && !seenL.has(s)) { seenL.add(s); bump(a.local, classify(s)); }
+    });
+    this.addEventListener('iceconnectionstatechange', () => a.ice.push(`${since()} ${this.iceConnectionState}`));
+  }
+  _remote(s) { if (s && !this._seenR.has(s)) { this._seenR.add(s); bump(this.diag.remote, classify(s)); } }
+  setRemoteDescription(d) {
+    for (const line of (d?.sdp ?? '').split(/\r?\n/)) if (line.startsWith('a=candidate:')) this._remote(line.slice(2));
+    return super.setRemoteDescription(d);
+  }
+  addIceCandidate(c) {
+    this._remote(typeof c === 'string' ? c : c?.candidate);
+    return super.addIceCandidate(c);
+  }
+}
+
+// ---- NAT self-test -----------------------------------------------------------
+// One connection, two STUN servers. If both see the same public endpoint, the
+// NAT maps independently of destination and hole punching should work. If they
+// see different ports, the mapping is destination-dependent ("symmetric") and
+// this device will generally need TURN. Browsers drop duplicate candidates, so
+// "only one server answered" is the normal look of the good case, not proof.
+// Gather candidates for one config; resolve on end-of-candidates or timeout.
+function gather(config, onCand) {
+  const pc = new RTCPeerConnection(config);
+  pc.createDataChannel('probe');
+  const done = new Promise(res => {
+    pc.onicecandidate = e => e.candidate ? onCand(e.candidate, e) : res();
+    setTimeout(res, 8000);
+  });
+  return pc.createOffer().then(o => pc.setLocalDescription(o)).then(() => done).finally(() => pc.close());
+}
+async function turnTest() {
+  if (!turnServer) return null;
+  let relay = 0;
+  try {
+    await gather({iceServers: [turnServer], iceTransportPolicy: 'relay'}, c => { if (c.type === 'relay') relay++; });
+  } catch (e) { return `config rejected by the browser: ${e.message}`; }
+  return relay ? `relay candidates obtained ×${relay}` : 'NO relay candidate: TURN unreachable or credentials refused';
+}
+async function natTest() {
+  const local = {}, byServer = {};
+  await gather({iceServers: STUN.map(urls => ({urls}))}, (c, e) => {
+    bump(local, classify(c.candidate));
+    if (c.type === 'srflx') {
+      const fam = (c.address ?? '').includes(':') ? 'v6' : 'v4';
+      const server = c.url ?? e.url ?? '?';
+      (byServer[server] ??= new Set()).add(`${fam}:${c.address}:${c.port}`);
+    }
+  });
+  const servers = Object.keys(byServer);
+  const sets = Object.values(byServer).map(s => [...s].sort().join(','));
+  let mapping, cls;
+  if (!servers.length) { mapping = 'no STUN reply: UDP blocked or STUN unreachable; cross-network direct connections will fail'; cls = 'bad'; }
+  else if (servers.length > 1 && new Set(sets).size > 1) { mapping = 'SYMMETRIC (destination-dependent) mapping: hole punching will usually fail; needs TURN'; cls = 'bad'; }
+  else if (servers.length > 1) { mapping = 'independent mapping (both STUN servers saw the same endpoint): hole punching should work'; cls = 'ok'; }
+  else { mapping = 'one STUN server surfaced (duplicates are dropped): probably independent mapping, not proven'; cls = 'ok'; }
+  // public ports only; addresses stay out of the report
+  const ports = Object.fromEntries(Object.entries(byServer).map(([s, set]) => [s, [...set].map(x => x.split(':')[0] + ':' + x.split(':').at(-1))]));
+  return {mapping, cls, local, ports, turn: await turnTest()};
+}
+let nat = null;
+natTest().then(r => {
+  nat = r;
+  const lines = [`NAT: ${r.mapping}`, `candidates: ${fmt(r.local)}`];
+  if (r.turn) lines.push(`TURN: ${r.turn}`);
+  $('nat').textContent = lines.join('\n');
+  $('nat').style.whiteSpace = 'pre-wrap';
+  $('nat').className = 'mono ' + r.cls;
+  log(lines.join(' · '), r.cls);
+}).catch(e => { $('nat').textContent = 'NAT test failed: ' + e; });
+
 const joinErrors = [];
-const room = joinRoom({appId: 'zot-ipfs-test-probe'}, roomId, {
+const room = joinRoom({appId: 'zot-ipfs-test-probe', rtcConfig, rtcPolyfill: LoggedPC}, roomId, {
   onJoinError: d => {
-    joinErrors.push({t: since(), peerId: d.peerId, error: String(d.error)});
+    // Attribute the failure to the newest unclaimed attempt that never reached
+    // connected/completed. Heuristic, hence "likely" in the log.
+    const a = [...attempts].reverse().find(x => !x.peerId && !x.error && !x.ice.some(s => /connected|completed/.test(s)));
+    if (a) { a.peerId = d.peerId; a.error = String(d.error); }
+    joinErrors.push({t: since(), peerId: d.peerId, error: String(d.error), attempt: a?.n ?? null});
     log(`JOIN ERROR ${d.peerId ?? ''}: ${d.error}`, 'bad');
+    if (a) log(`  likely attempt #${a.n}: local [${fmt(a.local)}] remote [${fmt(a.remote)}] ice: ${a.ice.map(s => s.split(' ')[1]).join('→') || 'never started'}`, 'bad');
   },
 });
 
@@ -161,6 +285,7 @@ const median = a => { if (!a.length) return null; const s = [...a].sort((x, y) =
 async function tick() {
   const pcs = room.getPeers();
   for (const [id, pc] of Object.entries(pcs)) {
+    if (pc.diag && !pc.diag.peerId) pc.diag.peerId = id;
     const p = peers[id];
     if (!p) continue;
     try { p.path = await pathOf(pc); } catch {}
@@ -206,6 +331,9 @@ $('report').onclick = async () => {
       name: p.name, joinedAt: p.joinedAt, left: p.left, state: p.state, path: p.path,
       rtt: {n: p.rtts.length, median: median(p.rtts), min: p.rtts.length ? Math.min(...p.rtts) : null, max: p.rtts.length ? Math.max(...p.rtts) : null},
     }])),
+    turn: turnParam ? 'custom' : null, forceRelay,
+    nat: nat && {mapping: nat.mapping, candidates: nat.local, ports: nat.ports, turn: nat.turn},
+    attempts: attempts.map(a => ({n: a.n, created: a.created, peerId: a.peerId, local: a.local, remote: a.remote, ice: a.ice, error: a.error})),
     joinErrors, events,
   };
   await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
