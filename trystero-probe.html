@@ -131,6 +131,30 @@ const fmt = o => Object.entries(o).map(([k, v]) => `${k}×${v}`).join(' ') || 'n
 // kinds each side offered and how ICE progressed, so a failure can be read as
 // "no usable candidates" vs "candidates present, every check failed".
 const attempts = [];
+
+// Private and link-local addresses are recorded verbatim (they tell us WHICH
+// interface was offered); public addresses are reduced to their family.
+function addrLabel(addr) {
+  if (!addr) return '(hidden)';
+  if (addr.endsWith('.local')) return 'mdns';
+  if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/.test(addr)) return addr;
+  if (/^(fe80|fc|fd)/i.test(addr)) return addr;
+  return addr.includes(':') ? 'public-v6' : 'public-v4';
+}
+// Per address pair: how many connectivity checks went each way. requestsReceived
+// on the side being dialled is the deciding number -- zero means the far side's
+// packets never arrived.
+async function snapshotPairs(pc) {
+  const stats = await pc.getStats();
+  const desc = id => { const c = stats.get(id); return c ? `${c.candidateType}/${c.protocol} ${addrLabel(c.address)}` : '?'; };
+  const pairs = [];
+  stats.forEach(s => {
+    if (s.type !== 'candidate-pair') return;
+    pairs.push({local: desc(s.localCandidateId), remote: desc(s.remoteCandidateId), state: s.state, nominated: !!s.nominated,
+      reqSent: s.requestsSent ?? 0, respRecv: s.responsesReceived ?? 0, reqRecv: s.requestsReceived ?? 0, respSent: s.responsesSent ?? 0});
+  });
+  return pairs;
+}
 window.probeAttempts = attempts;  // for inspection from devtools
 class LoggedPC extends RTCPeerConnection {
   constructor(cfg) {
@@ -143,7 +167,18 @@ class LoggedPC extends RTCPeerConnection {
       const s = e.candidate?.candidate;
       if (s && !seenL.has(s)) { seenL.add(s); bump(a.local, classify(s)); }
     });
-    this.addEventListener('iceconnectionstatechange', () => a.ice.push(`${since()} ${this.iceConnectionState}`));
+    this.addEventListener('iceconnectionstatechange', () => {
+      const st = this.iceConnectionState;
+      a.ice.push(`${since()} ${st}`);
+      if (!/^(connected|disconnected|failed)$/.test(st)) return;
+      snapshotPairs(this).then(pairs => {
+        a.pairs = pairs; a.pairsAt = `${since()} ${st}`;
+        if (st === 'connected') return;
+        log(`  attempt #${a.n} address pairs at ${st} (sent/answered · received/answered):`, 'bad');
+        for (const p of pairs) log(`    ${p.local} → ${p.remote}  ${p.state}  ${p.reqSent}/${p.respRecv} · ${p.reqRecv}/${p.respSent}`, 'bad');
+        if (!pairs.length) log('    no address pairs were ever formed', 'bad');
+      }).catch(e => log(`  pair snapshot failed: ${e}`, 'warn'));
+    });
   }
   _remote(s) { if (s && !this._seenR.has(s)) { this._seenR.add(s); bump(this.diag.remote, classify(s)); } }
   setRemoteDescription(d) {
@@ -222,6 +257,8 @@ const room = joinRoom({appId: 'zot-ipfs-test-probe', rtcConfig, rtcPolyfill: Log
     joinErrors.push({t: since(), peerId: d.peerId, error: String(d.error), attempt: a?.n ?? null});
     log(`JOIN ERROR ${d.peerId ?? ''}: ${d.error}`, 'bad');
     if (a) log(`  likely attempt #${a.n}: local [${fmt(a.local)}] remote [${fmt(a.remote)}] ice: ${a.ice.map(s => s.split(' ')[1]).join('→') || 'never started'}`, 'bad');
+    // The pair snapshot hangs off ICE state changes; if ICE never ran, none fires.
+    if (a && !a.ice.length) log('    no address pairs were ever formed: neither side had a usable candidate', 'bad');
   },
 });
 
@@ -333,7 +370,7 @@ $('report').onclick = async () => {
     }])),
     turn: turnParam ? 'custom' : null, forceRelay,
     nat: nat && {mapping: nat.mapping, candidates: nat.local, ports: nat.ports, turn: nat.turn},
-    attempts: attempts.map(a => ({n: a.n, created: a.created, peerId: a.peerId, local: a.local, remote: a.remote, ice: a.ice, error: a.error})),
+    attempts: attempts.map(a => ({n: a.n, created: a.created, peerId: a.peerId, local: a.local, remote: a.remote, ice: a.ice, error: a.error, pairsAt: a.pairsAt ?? null, pairs: a.pairs ?? null})),
     joinErrors, events,
   };
   await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
